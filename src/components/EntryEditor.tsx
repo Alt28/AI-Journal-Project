@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -73,6 +74,8 @@ export const EntryEditor = ({
   const initialAudioRef = useRef<string | undefined>(undefined);
   const initialImagesRef = useRef<string[]>([]);
   const initialSnapshotRef = useRef('');
+  const formScrollRef = useRef<ScrollView>(null);
+  const tagsInputRef = useRef<TextInput>(null);
 
   const [mode, setMode] = useState<EditorMode>('text');
   const [title, setTitle] = useState('');
@@ -97,6 +100,21 @@ export const EntryEditor = ({
 
   const visible = Boolean(request);
   const existing = request?.entry;
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const keyboardSubscription = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        if (tagsInputRef.current?.isFocused()) {
+          formScrollRef.current?.scrollToEnd({ animated: true });
+        }
+      },
+    );
+
+    return () => keyboardSubscription.remove();
+  }, [visible]);
 
   useEffect(() => {
     setDeleteConfirmationVisible(false);
@@ -443,10 +461,10 @@ export const EntryEditor = ({
               isDesktop && shadows.floating,
             ]}
           >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.flex}
-          >
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.flex}
+            >
             <View
               style={[
                 styles.editorHeader,
@@ -489,7 +507,9 @@ export const EntryEditor = ({
 
             <ScrollView
               contentContainerStyle={styles.form}
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
               keyboardShouldPersistTaps="handled"
+              ref={formScrollRef}
               showsVerticalScrollIndicator={false}
             >
               {!existing ? (
@@ -851,8 +871,14 @@ export const EntryEditor = ({
                 <Text style={[styles.label, { color: palette.inkMuted }]}>Tags</Text>
                 <TextInput
                   accessibilityLabel="Entry tags"
+                  ref={tagsInputRef}
                   value={tags}
                   onChangeText={setTags}
+                  onFocus={() => {
+                    requestAnimationFrame(() => {
+                      formScrollRef.current?.scrollToEnd({ animated: true });
+                    });
+                  }}
                   autoCapitalize="none"
                   placeholder="personal, work, gratitude"
                   placeholderTextColor={palette.inkFaint}

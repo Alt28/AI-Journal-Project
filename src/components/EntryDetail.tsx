@@ -41,6 +41,13 @@ export const EntryDetail = ({
   const palette = useTheme();
   const { width } = useWindowDimensions();
   const tablet = width >= 720;
+  const galleryColumns = width >= 560 ? 4 : 3;
+  const galleryGap = 7;
+  const readingSurfaceWidth = Math.max(0, Math.min(width, 720) - 84);
+  const galleryTileSize = Math.floor(
+    (readingSurfaceWidth - galleryGap * (galleryColumns - 1)) /
+      galleryColumns,
+  );
   const mood = entry?.mood ? moodMeta[entry.mood] : null;
   const moodTint = mood
     ? palette.isDark
@@ -193,34 +200,53 @@ export const EntryDetail = ({
               )}
 
               {entry.imageUris.length ? (
-                <View
-                  accessibilityLabel={`${entry.imageUris.length} attached ${
-                    entry.imageUris.length === 1 ? 'photo' : 'photos'
-                  }`}
-                  style={styles.photos}
-                >
-                  {entry.imageUris.map((uri, index) => (
-                    <Pressable
-                      accessibilityLabel={`Open attached photo ${index + 1}`}
-                      accessibilityRole="imagebutton"
-                      key={uri}
-                      onPress={() => setSelectedImage(uri)}
-                      style={({ pressed }) => [
-                        styles.photoButton,
-                        entry.imageUris.length === 1 && styles.singlePhotoButton,
-                        {
-                          backgroundColor: palette.input,
-                          opacity: pressed ? 0.82 : 1,
-                        },
-                      ]}
+                <View style={styles.photoSection}>
+                  <View style={styles.photoHeader}>
+                    <Text
+                      style={[styles.sectionLabel, { color: palette.inkMuted }]}
                     >
-                      <Image
-                        source={{ uri }}
-                        resizeMode="cover"
-                        style={styles.photo}
-                      />
-                    </Pressable>
-                  ))}
+                      PHOTOS
+                    </Text>
+                    <Text
+                      style={[styles.photoCount, { color: palette.inkFaint }]}
+                    >
+                      {entry.imageUris.length}
+                    </Text>
+                  </View>
+                  <View
+                    accessibilityLabel={`${entry.imageUris.length} attached ${
+                      entry.imageUris.length === 1 ? 'photo' : 'photos'
+                    }`}
+                    style={[styles.photos, { gap: galleryGap }]}
+                  >
+                    {entry.imageUris.map((uri, index) => (
+                      <Pressable
+                        accessibilityLabel={`Open attached photo ${index + 1}`}
+                        accessibilityRole="imagebutton"
+                        key={uri}
+                        onPress={() => setSelectedImage(uri)}
+                        style={({ pressed }) => [
+                          styles.photoButton,
+                          entry.imageUris.length === 1
+                            ? styles.singlePhotoButton
+                            : {
+                                width: galleryTileSize,
+                                height: galleryTileSize,
+                              },
+                          {
+                            backgroundColor: palette.input,
+                            opacity: pressed ? 0.82 : 1,
+                          },
+                        ]}
+                      >
+                        <Image
+                          source={{ uri }}
+                          resizeMode="cover"
+                          style={styles.photo}
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
               ) : null}
 
@@ -425,15 +451,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  photos: {
+  photoSection: {
     marginTop: 20,
+    gap: 9,
+  },
+  photoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  photoCount: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  photos: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
   },
   photoButton: {
-    width: '48.7%',
-    aspectRatio: 1,
     borderRadius: radii.md,
     overflow: 'hidden',
   },
