@@ -76,14 +76,17 @@ export const getGreeting = () => {
   return 'Good evening';
 };
 
-export const calculateStreak = (entries: JournalEntry[]) => {
+export const calculateStreak = (
+  entries: JournalEntry[],
+  referenceDate = new Date(),
+) => {
   const days = new Set(entries.map((entry) => entry.entryDate));
-  if (!days.size) return 0;
+  const cursor = new Date(referenceDate);
+  cursor.setHours(12, 0, 0, 0);
 
-  const cursor = new Date();
-  if (!days.has(toDateKey(cursor))) {
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  // A current streak only exists after journaling today. Past entries still
+  // remain in the journal, but adding one retroactively cannot start a streak.
+  if (!days.has(toDateKey(cursor))) return 0;
 
   let streak = 0;
   while (days.has(toDateKey(cursor))) {
