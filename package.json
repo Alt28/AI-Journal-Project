@@ -1,18 +1,50 @@
 {
-  "name": "journal-ai",
+  "name": "daybook-journal",
   "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
+  "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "android": "expo run:android",
+    "prebuild:android": "expo prebuild --platform android",
+    "typecheck": "tsc --noEmit",
+    "bundle:android": "expo export --platform android"
   },
   "dependencies": {
-    "expo": "~54.0.33",
-    "expo-status-bar": "~3.0.9",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "crypto-js": "^4.2.0",
+    "expo": "~57.0.8",
+    "expo-asset": "~57.0.7",
+    "expo-audio": "~57.0.3",
+    "expo-crypto": "~57.0.1",
+    "expo-document-picker": "~57.0.1",
+    "expo-file-system": "~57.0.1",
+    "expo-font": "~57.0.1",
+    "expo-image-manipulator": "~57.0.6",
+    "expo-image-picker": "~57.0.6",
+    "expo-linear-gradient": "~57.0.1",
+    "expo-local-authentication": "~57.0.2",
+    "expo-notifications": "~57.0.7",
+    "expo-sharing": "~57.0.7",
+    "expo-splash-screen": "~57.0.5",
+    "expo-sqlite": "~57.0.1",
+    "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-safe-area-context": "~5.7.0"
   },
-  "private": true
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "expo": {
+    "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      }
+    }
+  }
 }
