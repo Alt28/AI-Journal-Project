@@ -3,6 +3,7 @@
     "name": "Daybook",
     "slug": "daybook-journal",
     "version": "1.0.0",
+    "icon": "./assets/daybook-icon.png",
     "platforms": [
       "android"
     ],
@@ -18,7 +19,8 @@
         "android.permission.SYSTEM_ALERT_WINDOW"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#F4F0E8"
+        "backgroundColor": "#356B5B",
+        "foregroundImage": "./assets/daybook-icon.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",

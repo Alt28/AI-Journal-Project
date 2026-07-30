@@ -45,6 +45,7 @@ export const CalendarScreen = ({
   const viewingCurrentMonth =
     month.getFullYear() === now.getFullYear() &&
     month.getMonth() === now.getMonth();
+  const awayFromToday = !viewingCurrentMonth || selectedDate !== today;
 
   useEffect(() => {
     if (!focusedDate) return;
@@ -102,7 +103,15 @@ export const CalendarScreen = ({
               See your days at a glance
             </Text>
           </View>
-          <Button label="Today" compact variant="secondary" onPress={jumpToday} />
+          {awayFromToday ? (
+            <Button
+              label="Current date"
+              icon="calendar-outline"
+              compact
+              variant="secondary"
+              onPress={jumpToday}
+            />
+          ) : null}
         </View>
 
         <Card style={styles.calendar} elevated>
