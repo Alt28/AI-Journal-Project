@@ -38,8 +38,16 @@ import { EditorRequest, JournalDraft, JournalEntry, Mood } from '../types';
 import { moodMeta, radii, shadows } from '../theme';
 import { useReducedMotion } from '../useReducedMotion';
 import {
+  deleteVideoFile,
+  deleteVideoThumbnailFile,
+  keepJournalVideo,
+  MAX_VIDEO_DURATION_MS,
+  MAX_VIDEO_SIZE_BYTES,
+} from '../videoFiles';
+import {
   createId,
   formatDuration,
+  formatFileSize,
   formatLongDate,
   fromDateKey,
   toDateKey,
@@ -47,6 +55,7 @@ import {
 } from '../utils';
 import { AudioPlayer } from './AudioPlayer';
 import { ConfirmDialog } from './ConfirmDialog';
+import { JournalVideo } from './JournalVideo';
 import { Button, Icon, IconButton } from './ui';
 
 type EditorMode = 'text' | 'voice';
@@ -77,6 +86,8 @@ export const EntryEditor = ({
   const recorderState = useAudioRecorderState(recorder, 150);
   const initialAudioRef = useRef<string | undefined>(undefined);
   const initialImagesRef = useRef<string[]>([]);
+  const initialVideoRef = useRef<string | undefined>(undefined);
+  const initialVideoThumbnailRef = useRef<string | undefined>(undefined);
   const initialSnapshotRef = useRef('');
   const formScrollRef = useRef<ScrollView>(null);
   const tagsInputRef = useRef<TextInput>(null);
@@ -94,6 +105,14 @@ export const EntryEditor = ({
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [imageBusy, setImageBusy] = useState(false);
   const [imageError, setImageError] = useState('');
+  const [videoUri, setVideoUri] = useState<string | undefined>();
+  const [videoDuration, setVideoDuration] = useState<number | undefined>();
+  const [videoSizeBytes, setVideoSizeBytes] = useState<number | undefined>();
+  const [videoThumbnailUri, setVideoThumbnailUri] = useState<
+    string | undefined
+  >();
+  const [videoBusy, setVideoBusy] = useState(false);
+  const [videoError, setVideoError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [draftReady, setDraftReady] = useState(false);
@@ -171,6 +190,10 @@ export const EntryEditor = ({
       audioUri: entry?.audioUri,
       audioDuration: entry?.audioDuration,
       imageUris: entry?.imageUris ?? [],
+      videoUri: entry?.videoUri,
+      videoDuration: entry?.videoDuration,
+      videoSizeBytes: entry?.videoSizeBytes,
+      videoThumbnailUri: entry?.videoThumbnailUri,
     };
     initialSnapshotRef.current = JSON.stringify(original);
     setMode(draft?.mode ?? original.mode);
@@ -183,10 +206,20 @@ export const EntryEditor = ({
     setAudioUri(draft?.audioUri ?? original.audioUri);
     setAudioDuration(draft?.audioDuration ?? original.audioDuration);
     setImageUris(draft?.imageUris ?? original.imageUris);
+    setVideoUri(draft?.videoUri ?? original.videoUri);
+    setVideoDuration(draft?.videoDuration ?? original.videoDuration);
+    setVideoSizeBytes(draft?.videoSizeBytes ?? original.videoSizeBytes);
+    setVideoThumbnailUri(
+      draft?.videoThumbnailUri ?? original.videoThumbnailUri,
+    );
     initialAudioRef.current = entry?.audioUri;
     initialImagesRef.current = entry?.imageUris ?? [];
+    initialVideoRef.current = entry?.videoUri;
+    initialVideoThumbnailRef.current = entry?.videoThumbnailUri;
     setImageBusy(false);
     setImageError('');
+    setVideoBusy(false);
+    setVideoError('');
     setBusy(false);
     setError('');
     const readyTimer = setTimeout(() => setDraftReady(true), 0);
@@ -206,6 +239,10 @@ export const EntryEditor = ({
         audioUri,
         audioDuration,
         imageUris,
+        videoUri,
+        videoDuration,
+        videoSizeBytes,
+        videoThumbnailUri,
       }),
     [
       audioDuration,
@@ -218,6 +255,10 @@ export const EntryEditor = ({
       mood,
       tags,
       title,
+      videoDuration,
+      videoSizeBytes,
+      videoThumbnailUri,
+      videoUri,
     ],
   );
   const hasUnsavedChanges =
@@ -239,6 +280,10 @@ export const EntryEditor = ({
         audioUri,
         audioDuration,
         imageUris,
+        videoUri,
+        videoDuration,
+        videoSizeBytes,
+        videoThumbnailUri,
         updatedAt: new Date().toISOString(),
       }).then(() => setDraftStatus('Draft saved on this device'));
     }, 500);
@@ -258,6 +303,10 @@ export const EntryEditor = ({
     request,
     tags,
     title,
+    videoDuration,
+    videoSizeBytes,
+    videoThumbnailUri,
+    videoUri,
   ]);
 
   const parsedTags = useMemo(
@@ -284,11 +333,17 @@ export const EntryEditor = ({
   const canSave =
     !busy &&
     !imageBusy &&
+    !videoBusy &&
     !recorderState.isRecording &&
     date <= todayKey() &&
     (mode === 'voice'
       ? Boolean(audioUri)
-      : Boolean(title.trim() || body.trim() || imageUris.length));
+      : Boolean(
+          title.trim() ||
+            body.trim() ||
+            imageUris.length ||
+            videoUri,
+        ));
 
   const shiftDate = (offset: number) => {
     const next = fromDateKey(date);
@@ -391,6 +446,85 @@ export const EntryEditor = ({
     setImageError('');
   };
 
+  const addVideo = async () => {
+    if (videoBusy) return;
+    setVideoError('');
+    setVideoBusy(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+        videoMaxDuration: MAX_VIDEO_DURATION_MS / 1000,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset) return;
+      if (!asset.duration || asset.duration <= 0) {
+        setVideoError(
+          'The length of that video could not be read. Please choose another video.',
+        );
+        return;
+      }
+      if (asset.duration > MAX_VIDEO_DURATION_MS) {
+        setVideoError(
+          'Choose a video that is 5 minutes or shorter. Daybook will not cut it automatically.',
+        );
+        return;
+      }
+      if (
+        typeof asset.fileSize === 'number' &&
+        asset.fileSize > MAX_VIDEO_SIZE_BYTES
+      ) {
+        setVideoError('Choose a video smaller than 200 MB.');
+        return;
+      }
+      const saved = await keepJournalVideo({
+        uri: asset.uri,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
+      if (videoUri && videoUri !== initialVideoRef.current) {
+        await deleteVideoFile(videoUri);
+      }
+      if (
+        videoThumbnailUri &&
+        videoThumbnailUri !== initialVideoThumbnailRef.current
+      ) {
+        await deleteVideoThumbnailFile(videoThumbnailUri);
+      }
+      setVideoUri(saved.uri);
+      setVideoDuration(asset.duration);
+      setVideoSizeBytes(saved.sizeBytes);
+      setVideoThumbnailUri(saved.thumbnailUri);
+    } catch (reason) {
+      setVideoError(
+        reason instanceof Error && reason.message === 'VIDEO_TOO_LARGE'
+          ? 'Choose a video smaller than 200 MB.'
+          : 'That video could not be added. Please try another one.',
+      );
+    } finally {
+      setVideoBusy(false);
+    }
+  };
+
+  const removeVideo = async () => {
+    if (videoUri && videoUri !== initialVideoRef.current) {
+      await deleteVideoFile(videoUri);
+    }
+    if (
+      videoThumbnailUri &&
+      videoThumbnailUri !== initialVideoThumbnailRef.current
+    ) {
+      await deleteVideoThumbnailFile(videoThumbnailUri);
+    }
+    setVideoUri(undefined);
+    setVideoDuration(undefined);
+    setVideoSizeBytes(undefined);
+    setVideoThumbnailUri(undefined);
+    setVideoError('');
+  };
+
   const changeMode = async (nextMode: EditorMode) => {
     if (nextMode === mode) return;
     if (recorderState.isRecording) {
@@ -434,6 +568,15 @@ export const EntryEditor = ({
     await deleteImageFiles(
       imageUris.filter((uri) => !originalImages.has(uri)),
     );
+    if (videoUri && videoUri !== initialVideoRef.current) {
+      await deleteVideoFile(videoUri);
+    }
+    if (
+      videoThumbnailUri &&
+      videoThumbnailUri !== initialVideoThumbnailRef.current
+    ) {
+      await deleteVideoThumbnailFile(videoThumbnailUri);
+    }
     await onClearDraft();
     onClose();
   };
@@ -454,6 +597,10 @@ export const EntryEditor = ({
       audioUri: mode === 'voice' ? audioUri : undefined,
       audioDuration: mode === 'voice' ? audioDuration : undefined,
       imageUris,
+      videoUri,
+      videoDuration,
+      videoSizeBytes,
+      videoThumbnailUri,
     };
     onSave(entry);
   };
@@ -473,6 +620,15 @@ export const EntryEditor = ({
     void deleteImageFiles(
       imageUris.filter((uri) => !existingImages.has(uri)),
     );
+    if (videoUri && videoUri !== existing.videoUri) {
+      void deleteVideoFile(videoUri);
+    }
+    if (
+      videoThumbnailUri &&
+      videoThumbnailUri !== existing.videoThumbnailUri
+    ) {
+      void deleteVideoThumbnailFile(videoThumbnailUri);
+    }
     onDelete(existing);
   };
 
@@ -520,6 +676,7 @@ export const EntryEditor = ({
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={() => void closeEditor()}
+                style={styles.headerAction}
               >
                 <Text style={[styles.cancel, { color: palette.inkMuted }]}>
                   Cancel
@@ -533,7 +690,7 @@ export const EntryEditor = ({
                 disabled={!canSave}
                 hitSlop={8}
                 onPress={saveEntry}
-                style={{ opacity: canSave ? 1 : 0.35 }}
+                style={[styles.headerAction, { opacity: canSave ? 1 : 0.35 }]}
               >
                 <Text style={[styles.save, { color: palette.primary }]}>Save</Text>
               </Pressable>
@@ -837,6 +994,159 @@ export const EntryEditor = ({
                       { color: palette.inkMuted },
                     ]}
                   >
+                    Attachments
+                  </Text>
+                  <Text style={[styles.photoCount, { color: palette.inkFaint }]}>
+                    Optional
+                  </Text>
+                </View>
+                <View style={styles.attachmentActions}>
+                  <Pressable
+                    accessibilityHint="Add up to five photos"
+                    accessibilityLabel="Add photos from device"
+                    accessibilityRole="button"
+                    disabled={
+                      imageBusy || imageUris.length >= MAX_ENTRY_IMAGES
+                    }
+                    onPress={() => void addImages()}
+                    style={({ pressed }) => [
+                      styles.attachmentAction,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                        opacity:
+                          imageBusy ||
+                          imageUris.length >= MAX_ENTRY_IMAGES
+                            ? 0.5
+                            : pressed
+                              ? 0.72
+                              : 1,
+                      },
+                    ]}
+                  >
+                    {imageBusy ? (
+                      <ActivityIndicator color={palette.primary} size="small" />
+                    ) : (
+                      <Icon
+                        name="images-outline"
+                        color={palette.primary}
+                        size={22}
+                      />
+                    )}
+                    <View style={styles.attachmentActionCopy}>
+                      <Text
+                        style={[
+                          styles.attachmentActionTitle,
+                          { color: palette.ink },
+                        ]}
+                      >
+                        {imageBusy ? 'Adding…' : 'Photos'}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.attachmentActionHint,
+                          { color: palette.inkMuted },
+                        ]}
+                      >
+                        {imageUris.length
+                          ? `${imageUris.length}/${MAX_ENTRY_IMAGES} added`
+                          : 'Add up to 5'}
+                      </Text>
+                    </View>
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityHint="Add one video up to 5 minutes and 200 megabytes"
+                    accessibilityLabel={
+                      videoUri
+                        ? 'Replace attached video'
+                        : 'Add a video from device'
+                    }
+                    accessibilityRole="button"
+                    disabled={videoBusy}
+                    onPress={() => void addVideo()}
+                    style={({ pressed }) => [
+                      styles.attachmentAction,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                        opacity: videoBusy ? 0.5 : pressed ? 0.72 : 1,
+                      },
+                    ]}
+                  >
+                    {videoBusy ? (
+                      <ActivityIndicator color={palette.primary} size="small" />
+                    ) : (
+                      <Icon
+                        name="video-outline"
+                        color={palette.primary}
+                        size={22}
+                      />
+                    )}
+                    <View style={styles.attachmentActionCopy}>
+                      <Text
+                        style={[
+                          styles.attachmentActionTitle,
+                          { color: palette.ink },
+                        ]}
+                      >
+                        {videoBusy ? 'Adding…' : 'Video'}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.attachmentActionHint,
+                          { color: palette.inkMuted },
+                        ]}
+                      >
+                        {videoUri
+                          ? [
+                              'Attached',
+                              videoDuration
+                                ? formatDuration(videoDuration)
+                                : '',
+                              videoSizeBytes
+                                ? formatFileSize(videoSizeBytes)
+                                : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
+                          : 'Up to 5 min · 200 MB'}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
+                <Text style={[styles.photoHint, { color: palette.inkFaint }]}>
+                  Media stays on this device and uses its storage
+                </Text>
+                {imageError ? (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[styles.imageError, { color: palette.danger }]}
+                  >
+                    {imageError}
+                  </Text>
+                ) : null}
+                {videoError ? (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[styles.imageError, { color: palette.danger }]}
+                  >
+                    {videoError}
+                  </Text>
+                ) : null}
+              </View>
+
+              {imageUris.length ? (
+              <View>
+                <View style={styles.photoHeader}>
+                  <Text
+                    style={[
+                      styles.label,
+                      styles.photoLabel,
+                      { color: palette.inkMuted },
+                    ]}
+                  >
                     Photos
                   </Text>
                   <Text style={[styles.photoCount, { color: palette.inkFaint }]}>
@@ -861,7 +1171,7 @@ export const EntryEditor = ({
                       <Pressable
                         accessibilityLabel={`Remove attached photo ${index + 1}`}
                         accessibilityRole="button"
-                        hitSlop={5}
+                        hitSlop={6}
                         onPress={() => void removeImage(uri)}
                         style={({ pressed }) => [
                           styles.removePhoto,
@@ -872,56 +1182,93 @@ export const EntryEditor = ({
                       </Pressable>
                     </View>
                   ))}
-                  {imageUris.length < MAX_ENTRY_IMAGES ? (
-                    <Pressable
-                      accessibilityLabel="Add photos from device"
-                      accessibilityRole="button"
-                      disabled={imageBusy}
-                      onPress={() => void addImages()}
-                      style={({ pressed }) => [
-                        imageUris.length
-                          ? styles.addPhotoTile
-                          : styles.addPhotoEmpty,
-                        {
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          opacity: imageBusy ? 0.55 : pressed ? 0.72 : 1,
-                        },
-                      ]}
-                    >
-                      {imageBusy ? (
-                        <ActivityIndicator color={palette.primary} size="small" />
-                      ) : (
-                        <Icon
-                          name="images-outline"
-                          color={palette.primary}
-                          size={22}
-                        />
-                      )}
-                      <Text
-                        style={[styles.addPhotoText, { color: palette.primary }]}
-                      >
-                        {imageBusy
-                          ? 'Adding photos…'
-                          : imageUris.length
-                            ? 'Add'
-                            : 'Add photos'}
-                      </Text>
-                    </Pressable>
-                  ) : null}
                 </View>
-                <Text style={[styles.photoHint, { color: palette.inkFaint }]}>
-                  Stored privately on this device
-                </Text>
-                {imageError ? (
-                  <Text
-                    accessibilityLiveRegion="polite"
-                    style={[styles.imageError, { color: palette.danger }]}
-                  >
-                    {imageError}
-                  </Text>
-                ) : null}
               </View>
+              ) : null}
+
+              {videoUri ? (
+              <View>
+                <View style={styles.photoHeader}>
+                  <Text
+                    style={[
+                      styles.label,
+                      styles.photoLabel,
+                      { color: palette.inkMuted },
+                    ]}
+                  >
+                    Video
+                  </Text>
+                  <Text style={[styles.photoCount, { color: palette.inkFaint }]}>
+                    {[videoDuration ? formatDuration(videoDuration) : '',
+                      videoSizeBytes ? formatFileSize(videoSizeBytes) : '']
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                </View>
+                <View style={styles.videoAttachment}>
+                    <JournalVideo
+                      duration={videoDuration}
+                      uri={videoUri}
+                    />
+                    <View style={styles.videoActions}>
+                      <Pressable
+                        accessibilityLabel="Replace attached video"
+                        accessibilityRole="button"
+                        disabled={videoBusy}
+                        onPress={() => void addVideo()}
+                        style={({ pressed }) => [
+                          styles.videoAction,
+                          {
+                            backgroundColor: palette.primarySoft,
+                            opacity: videoBusy ? 0.5 : pressed ? 0.72 : 1,
+                          },
+                        ]}
+                      >
+                        <Icon
+                          name="refresh-outline"
+                          color={palette.primaryDark}
+                          size={18}
+                        />
+                        <Text
+                          style={[
+                            styles.videoActionText,
+                            { color: palette.primaryDark },
+                          ]}
+                        >
+                          Replace
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel="Remove attached video"
+                        accessibilityRole="button"
+                        disabled={videoBusy}
+                        onPress={() => void removeVideo()}
+                        style={({ pressed }) => [
+                          styles.videoAction,
+                          {
+                            backgroundColor: palette.dangerSoft,
+                            opacity: videoBusy ? 0.5 : pressed ? 0.72 : 1,
+                          },
+                        ]}
+                      >
+                        <Icon
+                          name="trash-outline"
+                          color={palette.danger}
+                          size={18}
+                        />
+                        <Text
+                          style={[
+                            styles.videoActionText,
+                            { color: palette.danger },
+                          ]}
+                        >
+                          Remove
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+              </View>
+              ) : null}
 
               <Pressable
                 accessibilityHint="Shows optional tags and favorite settings"
@@ -1069,7 +1416,7 @@ export const EntryEditor = ({
       </Modal>
       <ConfirmDialog
         confirmLabel="Delete"
-        message="This journal entry and its photos or recording, if any, will be permanently removed."
+        message="This entry and its photos, video, or voice recording, if any, will be permanently removed."
         onCancel={() => setDeleteConfirmationVisible(false)}
         onConfirm={deleteExisting}
         title="Delete this entry?"
@@ -1115,6 +1462,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerAction: {
+    minHeight: 32,
+    justifyContent: 'center',
+  },
   cancel: {
     fontSize: 14,
     fontWeight: '600',
@@ -1127,7 +1478,7 @@ const styles = StyleSheet.create({
     height: 24,
     paddingTop: 6,
     paddingHorizontal: 20,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -1176,7 +1527,7 @@ const styles = StyleSheet.create({
   },
   dateHint: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1204,7 +1555,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   moodLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   titleInput: {
@@ -1226,7 +1577,7 @@ const styles = StyleSheet.create({
   wordCount: {
     marginTop: 7,
     marginRight: 3,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'right',
   },
   recorder: {
@@ -1274,8 +1625,8 @@ const styles = StyleSheet.create({
   },
   recordBody: {
     maxWidth: 330,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: 'center',
     marginBottom: 5,
   },
@@ -1289,8 +1640,8 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
   photoHeader: {
     flexDirection: 'row',
@@ -1301,8 +1652,36 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   photoCount: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
+  },
+  attachmentActions: {
+    marginTop: 9,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  attachmentAction: {
+    minWidth: 0,
+    flex: 1,
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  attachmentActionCopy: {
+    minWidth: 0,
+    flex: 1,
+  },
+  attachmentActionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  attachmentActionHint: {
+    marginTop: 2,
+    fontSize: 12,
   },
   photoGrid: {
     marginTop: 9,
@@ -1325,9 +1704,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 7,
     right: 7,
-    width: 29,
-    height: 29,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(20,24,22,0.76)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1357,16 +1736,61 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  videoAttachment: {
+    marginTop: 9,
+    gap: 8,
+  },
+  videoActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  videoAction: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: radii.pill,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  videoActionText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  addVideo: {
+    minHeight: 72,
+    marginTop: 9,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: radii.md,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 11,
+  },
+  addVideoCopy: {
+    alignItems: 'flex-start',
+  },
+  addVideoTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  addVideoHint: {
+    marginTop: 2,
+    fontSize: 12,
+  },
   photoHint: {
     marginTop: 7,
     marginLeft: 3,
-    fontSize: 11,
+    fontSize: 12,
   },
   imageError: {
     marginTop: 6,
     marginLeft: 3,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
   moreOptionsToggle: {
     minHeight: 66,
@@ -1387,8 +1811,8 @@ const styles = StyleSheet.create({
   },
   moreOptionsSummary: {
     marginTop: 3,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 12,
+    lineHeight: 17,
   },
   moreOptionsPanel: {
     marginTop: -12,
@@ -1407,7 +1831,7 @@ const styles = StyleSheet.create({
   tagHint: {
     marginTop: 6,
     marginLeft: 3,
-    fontSize: 11,
+    fontSize: 12,
   },
   favoriteRow: {
     minHeight: 66,
@@ -1427,7 +1851,7 @@ const styles = StyleSheet.create({
   },
   favoriteBody: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: 12,
   },
   delete: {
     minHeight: 48,

@@ -192,8 +192,12 @@ export const TodayScreen = ({
             </Text>
           </View>
           <Pressable
-            accessibilityHint="Opens your streak details"
-            accessibilityLabel={`${streak} day streak`}
+            accessibilityHint="Opens your journaling activity"
+            accessibilityLabel={
+              streak
+                ? `${streak} day journal rhythm`
+                : 'Open journaling activity'
+            }
             accessibilityRole="button"
             onPress={() => setStreakOpen(true)}
             style={({ pressed }) => [
@@ -207,7 +211,9 @@ export const TodayScreen = ({
           >
             <Icon name="flame" color={palette.accent} size={17} />
             <Text style={[styles.streakText, { color: palette.ink }]}>
-              {streak} day{streak === 1 ? '' : 's'}
+              {streak
+                ? `${streak} day${streak === 1 ? '' : 's'}`
+                : 'Your activity'}
             </Text>
             <Icon name="chevron-forward" color={palette.accent} size={13} />
           </Pressable>
@@ -627,6 +633,7 @@ export const TodayScreen = ({
                 accessibilityRole="button"
                 onPress={onOpenJournal}
                 hitSlop={8}
+                style={styles.linkAction}
               >
                 <Text style={[styles.seeAll, { color: palette.primary }]}>
                   See all
@@ -690,7 +697,7 @@ export const TodayScreen = ({
               styles.streakSheet,
               {
                 backgroundColor: palette.elevated,
-                paddingBottom: Math.max(insets.bottom, 28),
+                paddingBottom: Math.max(insets.bottom, 16),
               },
             ]}
           >
@@ -698,13 +705,13 @@ export const TodayScreen = ({
             <View style={styles.sheetHeader}>
               <View style={styles.sheetHeading}>
                 <Text style={[styles.sheetEyebrow, { color: palette.accent }]}>
-                  JOURNALING STREAK
+                  JOURNALING ACTIVITY
                 </Text>
                 <Text style={[styles.sheetTitle, { color: palette.ink }]}>
-                  Keep your rhythm
+                  Your journal rhythm
                 </Text>
                 <Text style={[styles.sheetCount, { color: palette.inkMuted }]}>
-                  One journaled day at a time
+                  Write when it feels useful—there is no perfect schedule
                 </Text>
               </View>
               <Pressable
@@ -724,11 +731,7 @@ export const TodayScreen = ({
               </Pressable>
             </View>
 
-            <ScrollView
-              contentContainerStyle={styles.streakContent}
-              showsVerticalScrollIndicator={false}
-              style={styles.sheetList}
-            >
+            <View style={styles.streakContent}>
               <View
                 style={[
                   styles.streakSummary,
@@ -741,10 +744,14 @@ export const TodayScreen = ({
                 <View
                   style={[
                     styles.streakSummaryIcon,
-                    { backgroundColor: palette.accent },
+                    { backgroundColor: palette.primary },
                   ]}
                 >
-                  <Icon name="flame" color="#FFFFFF" size={29} />
+                  <Icon
+                    name="flame"
+                    color={palette.onPrimary}
+                    size={27}
+                  />
                 </View>
                 <View style={styles.streakSummaryCopy}>
                   <Text style={[styles.streakSummaryValue, { color: palette.ink }]}>
@@ -756,9 +763,7 @@ export const TodayScreen = ({
                       { color: palette.inkMuted },
                     ]}
                   >
-                    {streak
-                      ? 'Your current streak'
-                      : 'Journal today to begin a new streak'}
+                    Current rhythm
                   </Text>
                 </View>
               </View>
@@ -772,16 +777,16 @@ export const TodayScreen = ({
                       borderColor: palette.border,
                     },
                   ]}
-                >
+                  >
                   <Icon name="trophy-outline" color={palette.primary} size={20} />
                   <View>
                     <Text style={[styles.streakStatValue, { color: palette.ink }]}>
-                      {bestStreak}
+                      {bestStreak || '—'}
                     </Text>
                     <Text
                       style={[styles.streakStatLabel, { color: palette.inkFaint }]}
                     >
-                      BEST STREAK
+                      LONGEST RUN
                     </Text>
                   </View>
                 </View>
@@ -793,11 +798,11 @@ export const TodayScreen = ({
                       borderColor: palette.border,
                     },
                   ]}
-                >
+                  >
                   <Icon name="book-outline" color={palette.primary} size={20} />
                   <View>
                     <Text style={[styles.streakStatValue, { color: palette.ink }]}>
-                      {totalJournaledDays}
+                      {totalJournaledDays || '—'}
                     </Text>
                     <Text
                       style={[styles.streakStatLabel, { color: palette.inkFaint }]}
@@ -808,26 +813,15 @@ export const TodayScreen = ({
                 </View>
               </View>
 
-              <LinearGradient
-                colors={
-                  palette.isDark
-                    ? ['#21372F', '#192721']
-                    : ['#EAF6F1', '#F8FBFA']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <View
                 style={[
                   styles.streakJourney,
-                  { borderColor: palette.border },
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                  },
                 ]}
               >
-                <View
-                  pointerEvents="none"
-                  style={[
-                    styles.streakJourneyGlow,
-                    { backgroundColor: palette.primarySoft },
-                  ]}
-                />
                 <View style={styles.streakJourneyHeader}>
                   <View style={styles.streakJourneyHeading}>
                     <View>
@@ -837,7 +831,7 @@ export const TodayScreen = ({
                           { color: palette.ink },
                         ]}
                       >
-                        Your 7-day trail
+                        Last 7 days
                       </Text>
                       <Text
                         style={[
@@ -845,57 +839,17 @@ export const TodayScreen = ({
                           { color: palette.inkMuted },
                         ]}
                       >
-                        Each flame is a day you showed up
+                        {
+                          recentStreakDays.filter((day) => day.isJournaled)
+                            .length
+                        }{' '}
+                        days journaled
                       </Text>
                     </View>
-                  </View>
-                  <View
-                    style={[
-                      styles.streakJourneyCount,
-                      { backgroundColor: palette.input },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.streakJourneyCountValue,
-                        { color: palette.primary },
-                      ]}
-                    >
-                      {
-                        recentStreakDays.filter((day) => day.isJournaled)
-                          .length
-                      }
-                      /7
-                    </Text>
-                    <Text
-                      style={[
-                        styles.streakJourneyCountLabel,
-                        { color: palette.inkFaint },
-                      ]}
-                    >
-                      JOURNALED
-                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.streakTrail}>
-                  <View style={styles.streakTrailLine}>
-                    {recentStreakDays.slice(0, -1).map((day, index) => (
-                      <View
-                        key={`${day.key}-path`}
-                        style={[
-                          styles.streakTrailSegment,
-                          {
-                            backgroundColor:
-                              day.isJournaled &&
-                              recentStreakDays[index + 1]?.isJournaled
-                                ? palette.primary
-                                : palette.input,
-                          },
-                        ]}
-                      />
-                    ))}
-                  </View>
                   <View style={styles.streakTrailDays}>
                     {recentStreakDays.map((day) => (
                       <View key={day.key} style={styles.streakTrailDay}>
@@ -938,10 +892,10 @@ export const TodayScreen = ({
                               name={day.isJournaled ? 'flame' : 'remove'}
                               color={
                                 day.isJournaled
-                                  ? '#FFFFFF'
+                                  ? palette.onPrimary
                                   : palette.inkFaint
                               }
-                              size={day.isJournaled ? 17 : 13}
+                              size={day.isJournaled ? 16 : 13}
                             />
                           </View>
                         </View>
@@ -969,7 +923,7 @@ export const TodayScreen = ({
                   ]}
                 >
                   <Icon
-                    name={streak ? 'flame-outline' : 'leaf-outline'}
+                    name="leaf-outline"
                     color={palette.accent}
                     size={16}
                   />
@@ -979,28 +933,10 @@ export const TodayScreen = ({
                       { color: palette.inkMuted },
                     ]}
                   >
-                    {streak
-                      ? `${streak}-day rhythm in progress`
-                      : 'A new rhythm can begin today'}
+                    Your journal works at your pace
                   </Text>
-                  <View style={styles.streakTodayLegend}>
-                    <View
-                      style={[
-                        styles.streakTodayRing,
-                        { borderColor: palette.primary },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.streakTodayText,
-                        { color: palette.inkFaint },
-                      ]}
-                    >
-                      Today
-                    </Text>
-                  </View>
                 </View>
-              </LinearGradient>
+              </View>
 
               <View
                 style={[
@@ -1025,18 +961,17 @@ export const TodayScreen = ({
                 </View>
                 <View style={styles.streakRuleCopy}>
                   <Text style={[styles.streakRuleTitle, { color: palette.ink }]}>
-                    How your streak works
+                    A gentle rhythm
                   </Text>
                   <Text
                     style={[styles.streakRuleBody, { color: palette.inkMuted }]}
                   >
-                    Save at least one entry today to keep it going. Multiple
-                    entries still count as one day. Missing a day resets the
-                    current streak, but your best streak stays.
+                    Multiple entries count as one day. A break never removes
+                    your entries or longest run—return whenever you are ready.
                   </Text>
                 </View>
               </View>
-            </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1197,7 +1132,7 @@ export const TodayScreen = ({
                     <Text
                       style={[styles.weekSectionHint, { color: palette.inkFaint }]}
                     >
-                      Tap any day
+                      Sun–Sat
                     </Text>
                   </View>
 
@@ -1205,7 +1140,8 @@ export const TodayScreen = ({
                     {weeklyInsights.days.map((day) => {
                       const mood = day.mood ? moodMeta[day.mood] : null;
                       return (
-                        <Pressable
+                        <View
+                          accessible
                           accessibilityLabel={`${day.fullLabel}, ${
                             mood ? `${mood.label} mood` : 'no mood'
                           }, ${day.entryCount} ${
@@ -1213,12 +1149,8 @@ export const TodayScreen = ({
                               ? 'entry'
                               : 'entries'
                           }${day.isFuture ? ', future date unavailable' : ''}`}
-                          accessibilityRole="button"
-                          accessibilityState={{ disabled: day.isFuture }}
-                          disabled={day.isFuture}
                           key={day.key}
-                          onPress={() => setSelectedDate(day.key)}
-                          style={({ pressed }) => [
+                          style={[
                             styles.weekRailDay,
                             {
                               backgroundColor: mood
@@ -1229,12 +1161,7 @@ export const TodayScreen = ({
                               borderColor: day.isToday
                                 ? palette.primary
                                 : 'transparent',
-                              opacity: day.isFuture
-                                ? 0.34
-                                : pressed
-                                  ? 0.6
-                                  : 1,
-                              transform: [{ scale: pressed ? 0.95 : 1 }],
+                              opacity: day.isFuture ? 0.34 : 1,
                             },
                           ]}
                         >
@@ -1292,7 +1219,7 @@ export const TodayScreen = ({
                               </Text>
                             </View>
                           ) : null}
-                        </Pressable>
+                        </View>
                       );
                     })}
                   </View>
@@ -1573,7 +1500,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   eyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
     marginBottom: 5,
@@ -1585,7 +1512,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   streakPill: {
-    minHeight: 38,
+    minHeight: 48,
     paddingHorizontal: 13,
     borderRadius: radii.pill,
     flexDirection: 'row',
@@ -1644,11 +1571,11 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
   heroButton: {
-    minHeight: 46,
+    minHeight: 48,
     backgroundColor: '#FFFFFF',
   },
   voiceButton: {
-    height: 46,
+    minHeight: 48,
     borderRadius: radii.pill,
     paddingHorizontal: 18,
     borderWidth: 1,
@@ -1692,7 +1619,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   insightEyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1704,7 +1631,7 @@ const styles = StyleSheet.create({
   },
   weeklyAction: {
     minWidth: 78,
-    minHeight: 43,
+    minHeight: 48,
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -1712,7 +1639,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weeklyActionMeta: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   weeklyActionLabel: {
@@ -1751,7 +1678,7 @@ const styles = StyleSheet.create({
     lineHeight: 25,
   },
   weeklySnapshotLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.45,
     textAlign: 'center',
@@ -1769,7 +1696,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   weekProgressText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   weekProgressSegments: {
@@ -1783,7 +1710,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   memoryCount: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   memoryList: {
@@ -1799,7 +1726,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   memoryLabelText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.85,
   },
@@ -1830,7 +1757,7 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   aiLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.15,
   },
@@ -1840,7 +1767,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   aiStatusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.75,
   },
@@ -1851,8 +1778,8 @@ const styles = StyleSheet.create({
   },
   aiBody: {
     marginTop: 4,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 19,
   },
   prompt: {
     padding: 19,
@@ -1874,9 +1801,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   moodButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1939,7 +1866,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-    maxHeight: '82%',
+    maxHeight: '96%',
     minHeight: 410,
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
@@ -1953,19 +1880,19 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 18,
+    marginBottom: 12,
   },
   sheetHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 14,
-    marginBottom: 18,
+    marginBottom: 12,
   },
   sheetHeading: {
     flex: 1,
   },
   sheetEyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.15,
     marginBottom: 5,
@@ -1977,7 +1904,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.45,
   },
   sheetCount: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 4,
   },
   sheetClose: {
@@ -1999,22 +1926,21 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   streakContent: {
-    gap: 14,
-    paddingBottom: 4,
+    gap: 10,
   },
   streakSummary: {
-    minHeight: 98,
-    borderRadius: 24,
+    minHeight: 76,
+    borderRadius: 21,
     borderWidth: 1,
-    padding: 18,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 15,
   },
   streakSummaryIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2022,15 +1948,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   streakSummaryValue: {
-    fontSize: 24,
-    lineHeight: 29,
+    fontSize: 22,
+    lineHeight: 26,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   streakSummaryLabel: {
     marginTop: 4,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: '600',
   },
   streakStats: {
@@ -2039,10 +1965,10 @@ const styles = StyleSheet.create({
   },
   streakStat: {
     flex: 1,
-    minHeight: 68,
-    borderRadius: 19,
+    minHeight: 56,
+    borderRadius: 17,
     borderWidth: 1,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -2054,25 +1980,19 @@ const styles = StyleSheet.create({
   },
   streakStatLabel: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.55,
   },
   streakJourney: {
-    position: 'relative',
-    borderRadius: 24,
+    borderRadius: 21,
     borderWidth: 1,
-    padding: 16,
+    padding: 12,
     overflow: 'hidden',
   },
-  streakJourneyGlow: {
-    position: 'absolute',
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    top: -86,
-    right: -48,
-    opacity: 0.42,
+  linkAction: {
+    minHeight: 32,
+    justifyContent: 'center',
   },
   streakJourneyHeader: {
     flexDirection: 'row',
@@ -2090,49 +2010,14 @@ const styles = StyleSheet.create({
   },
   streakJourneySubtitle: {
     marginTop: 3,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
-  streakJourneyCount: {
-    width: 59,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  streakJourneyCountValue: {
-    fontSize: 14,
-    lineHeight: 17,
-    fontWeight: '800',
-  },
-  streakJourneyCountLabel: {
-    marginTop: 2,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.45,
-  },
   streakTrail: {
-    position: 'relative',
-    marginTop: 18,
-  },
-  streakTrailLine: {
-    position: 'absolute',
-    top: 36,
-    left: '7.14%',
-    right: '7.14%',
-    height: 3,
-    borderRadius: 2,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    zIndex: 0,
-  },
-  streakTrailSegment: {
-    flex: 1,
-    height: 3,
+    marginTop: 11,
   },
   streakTrailDays: {
     flexDirection: 'row',
-    zIndex: 1,
   },
   streakTrailDay: {
     flex: 1,
@@ -2140,74 +2025,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   streakTrailLabel: {
-    fontSize: 10,
-    lineHeight: 9,
+    fontSize: 11,
+    lineHeight: 12,
     fontWeight: '800',
     letterSpacing: 0.45,
   },
   streakTrailNodeRing: {
-    width: 42,
-    height: 42,
-    marginTop: 7,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    marginTop: 5,
+    borderRadius: 18,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   streakTrailNode: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
   },
   streakTrailDate: {
-    marginTop: 5,
-    fontSize: 11,
+    marginTop: 3,
+    fontSize: 12,
     fontWeight: '700',
   },
   streakJourneyFooter: {
-    marginTop: 16,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
   },
   streakJourneyFooterText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  streakTodayLegend: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  streakTodayRing: {
-    width: 11,
-    height: 11,
-    borderRadius: 6,
-    borderWidth: 2,
-  },
-  streakTodayText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
   },
   streakRule: {
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 15,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
   },
   streakRuleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2219,9 +2088,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   streakRuleBody: {
-    marginTop: 4,
+    marginTop: 3,
     fontSize: 12,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   weekStats: {
     flexDirection: 'row',
@@ -2246,7 +2115,7 @@ const styles = StyleSheet.create({
   weekStatLabel: {
     maxWidth: '90%',
     marginTop: 3,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.6,
     textAlign: 'center',
@@ -2262,7 +2131,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   weekSectionHint: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   weekRail: {
@@ -2280,7 +2149,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   weekRailLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
@@ -2300,7 +2169,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   weekRailDate: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   weekRailCount: {
@@ -2316,7 +2185,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   weekRailCountText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
   },
   weekJournaledDays: {

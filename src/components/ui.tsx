@@ -1,4 +1,59 @@
-import { Ionicons } from '@expo/vector-icons';
+import IconAdjustmentsHorizontal from '@tabler/icons-react-native/IconAdjustmentsHorizontal';
+import IconAlertCircle from '@tabler/icons-react-native/IconAlertCircle';
+import IconArchive from '@tabler/icons-react-native/IconArchive';
+import IconArrowDown from '@tabler/icons-react-native/IconArrowDown';
+import IconArrowLeft from '@tabler/icons-react-native/IconArrowLeft';
+import IconBell from '@tabler/icons-react-native/IconBell';
+import IconBookFilled from '@tabler/icons-react-native/IconBookFilled';
+import IconCalendar from '@tabler/icons-react-native/IconCalendar';
+import IconCalendarFilled from '@tabler/icons-react-native/IconCalendarFilled';
+import IconChartLine from '@tabler/icons-react-native/IconChartLine';
+import IconChevronDown from '@tabler/icons-react-native/IconChevronDown';
+import IconChevronLeft from '@tabler/icons-react-native/IconChevronLeft';
+import IconChevronRight from '@tabler/icons-react-native/IconChevronRight';
+import IconChevronUp from '@tabler/icons-react-native/IconChevronUp';
+import IconCircle from '@tabler/icons-react-native/IconCircle';
+import IconCircleCheckFilled from '@tabler/icons-react-native/IconCircleCheckFilled';
+import IconCircleXFilled from '@tabler/icons-react-native/IconCircleXFilled';
+import IconClock from '@tabler/icons-react-native/IconClock';
+import IconColorSwatch from '@tabler/icons-react-native/IconColorSwatch';
+import IconDeviceMobile from '@tabler/icons-react-native/IconDeviceMobile';
+import IconEdit from '@tabler/icons-react-native/IconEdit';
+import IconFingerprint from '@tabler/icons-react-native/IconFingerprint';
+import IconFlameFilled from '@tabler/icons-react-native/IconFlameFilled';
+import IconFolderOpen from '@tabler/icons-react-native/IconFolderOpen';
+import IconHeart from '@tabler/icons-react-native/IconHeart';
+import IconHeartFilled from '@tabler/icons-react-native/IconHeartFilled';
+import IconInfoCircle from '@tabler/icons-react-native/IconInfoCircle';
+import IconLeaf from '@tabler/icons-react-native/IconLeaf';
+import IconLeafFilled from '@tabler/icons-react-native/IconLeafFilled';
+import IconLock from '@tabler/icons-react-native/IconLock';
+import IconLogout from '@tabler/icons-react-native/IconLogout';
+import IconMicrophone from '@tabler/icons-react-native/IconMicrophone';
+import IconMicrophoneFilled from '@tabler/icons-react-native/IconMicrophoneFilled';
+import IconMinus from '@tabler/icons-react-native/IconMinus';
+import IconMoon from '@tabler/icons-react-native/IconMoon';
+import IconNotebook from '@tabler/icons-react-native/IconNotebook';
+import IconPhoto from '@tabler/icons-react-native/IconPhoto';
+import IconPhotoFilled from '@tabler/icons-react-native/IconPhotoFilled';
+import IconPlayerPause from '@tabler/icons-react-native/IconPlayerPause';
+import IconPlayerPlay from '@tabler/icons-react-native/IconPlayerPlay';
+import IconPlayerStop from '@tabler/icons-react-native/IconPlayerStop';
+import IconPlus from '@tabler/icons-react-native/IconPlus';
+import IconRefresh from '@tabler/icons-react-native/IconRefresh';
+import IconSearch from '@tabler/icons-react-native/IconSearch';
+import IconSettings from '@tabler/icons-react-native/IconSettings';
+import IconSettingsFilled from '@tabler/icons-react-native/IconSettingsFilled';
+import IconShare from '@tabler/icons-react-native/IconShare';
+import IconShieldCheck from '@tabler/icons-react-native/IconShieldCheck';
+import IconSparkles from '@tabler/icons-react-native/IconSparkles';
+import IconSun from '@tabler/icons-react-native/IconSun';
+import IconSunFilled from '@tabler/icons-react-native/IconSunFilled';
+import IconTags from '@tabler/icons-react-native/IconTags';
+import IconTrash from '@tabler/icons-react-native/IconTrash';
+import IconTrophy from '@tabler/icons-react-native/IconTrophy';
+import IconVideo from '@tabler/icons-react-native/IconVideo';
+import IconX from '@tabler/icons-react-native/IconX';
 import { PropsWithChildren, ReactNode } from 'react';
 import {
   ActivityIndicator,
@@ -14,7 +69,70 @@ import {
 import { useTheme } from '../ThemeContext';
 import { radii, shadows } from '../theme';
 
-export type IconName = React.ComponentProps<typeof Ionicons>['name'];
+const iconMap = {
+  add: IconPlus,
+  'alert-circle-outline': IconAlertCircle,
+  'analytics-outline': IconChartLine,
+  'archive-outline': IconArchive,
+  'arrow-back': IconArrowLeft,
+  'arrow-down-outline': IconArrowDown,
+  book: IconBookFilled,
+  'book-outline': IconNotebook,
+  calendar: IconCalendarFilled,
+  'calendar-outline': IconCalendar,
+  'checkmark-circle': IconCircleCheckFilled,
+  'chevron-back': IconChevronLeft,
+  'chevron-down': IconChevronDown,
+  'chevron-forward': IconChevronRight,
+  'chevron-up': IconChevronUp,
+  close: IconX,
+  'close-circle': IconCircleXFilled,
+  'color-palette-outline': IconColorSwatch,
+  'create-outline': IconEdit,
+  'ellipse-outline': IconCircle,
+  'exit-outline': IconLogout,
+  'finger-print': IconFingerprint,
+  flame: IconFlameFilled,
+  'folder-open-outline': IconFolderOpen,
+  heart: IconHeartFilled,
+  'heart-outline': IconHeart,
+  images: IconPhotoFilled,
+  'images-outline': IconPhoto,
+  'information-circle-outline': IconInfoCircle,
+  leaf: IconLeafFilled,
+  'leaf-outline': IconLeaf,
+  'lock-closed': IconLock,
+  'lock-closed-outline': IconLock,
+  mic: IconMicrophoneFilled,
+  'mic-outline': IconMicrophone,
+  moon: IconMoon,
+  'moon-outline': IconMoon,
+  notifications: IconBell,
+  'notifications-outline': IconBell,
+  'options-outline': IconAdjustmentsHorizontal,
+  pause: IconPlayerPause,
+  'phone-portrait-outline': IconDeviceMobile,
+  play: IconPlayerPlay,
+  'pricetags-outline': IconTags,
+  'refresh-outline': IconRefresh,
+  remove: IconMinus,
+  'remove-outline': IconMinus,
+  'search-outline': IconSearch,
+  settings: IconSettingsFilled,
+  'settings-outline': IconSettings,
+  'share-outline': IconShare,
+  'shield-checkmark-outline': IconShieldCheck,
+  sparkles: IconSparkles,
+  stop: IconPlayerStop,
+  sunny: IconSunFilled,
+  'sunny-outline': IconSun,
+  'time-outline': IconClock,
+  'trash-outline': IconTrash,
+  'trophy-outline': IconTrophy,
+  'video-outline': IconVideo,
+} as const;
+
+export type IconName = keyof typeof iconMap;
 
 export const Icon = ({
   name,
@@ -26,7 +144,14 @@ export const Icon = ({
   color?: string;
 }) => {
   const palette = useTheme();
-  return <Ionicons name={name} size={size} color={color ?? palette.ink} />;
+  const TablerIcon = iconMap[name];
+  return (
+    <TablerIcon
+      color={color ?? palette.ink}
+      size={size}
+      strokeWidth={1.85}
+    />
+  );
 };
 
 interface ButtonProps {
@@ -64,7 +189,7 @@ export const Button = ({
   const foreground =
     foregroundColor ??
     (variant === 'primary'
-      ? '#FFFFFF'
+      ? palette.onPrimary
       : variant === 'danger'
         ? palette.danger
         : variant === 'secondary'
@@ -103,7 +228,7 @@ export const IconButton = ({
   icon,
   onPress,
   label,
-  size = 42,
+  size = 48,
   color,
   background,
   disabled = false,

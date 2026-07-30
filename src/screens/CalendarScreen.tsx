@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   monthCaption: {
     marginTop: 3,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.1,
   },
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   weekday: {
     width: `${100 / 7}%`,
     textAlign: 'center',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.35,
   },
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dayText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   dayMoodEmoji: {
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   entryCountText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
   },
   moodStory: {
@@ -612,13 +612,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   moodStoryEyebrow: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.95,
   },
   moodStoryTitle: {
     marginTop: 3,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
   moodStoryCount: {
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   moodStoryCountLabel: {
     marginTop: 1,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.4,
   },
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
   },
   moodStoryNote: {
     marginTop: -3,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   moodKeyLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   addDate: {

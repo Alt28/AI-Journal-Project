@@ -179,6 +179,7 @@ export const JournalScreen = ({
                 accessibilityRole="button"
                 hitSlop={8}
                 onPress={() => setQuery('')}
+                style={styles.clearSearch}
               >
                 <Icon name="close-circle" color={palette.inkFaint} size={19} />
               </Pressable>
@@ -435,6 +436,12 @@ const styles = StyleSheet.create({
     height: '100%',
     fontSize: 14,
   },
+  clearSearch: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filters: {
     paddingVertical: 15,
     flexDirection: 'row',
@@ -443,7 +450,7 @@ const styles = StyleSheet.create({
   filterButton: {
     flex: 1,
     minWidth: 0,
-    height: 47,
+    minHeight: 48,
     borderRadius: 17,
     borderWidth: 1,
     paddingHorizontal: 5,
@@ -454,7 +461,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     minWidth: 0,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   resultRow: {
@@ -465,7 +472,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   resultLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   sortLabel: {
@@ -474,7 +481,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sortText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   monthHeader: {
@@ -501,13 +508,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   currentMonthText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
   monthCount: {
     marginLeft: 'auto',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   monthDivider: {
@@ -583,7 +590,7 @@ const styles = StyleSheet.create({
   },
   galleryCountText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
   galleryCopy: {

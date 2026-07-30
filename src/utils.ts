@@ -51,6 +51,15 @@ export const formatDuration = (milliseconds = 0) => {
   return `${minutes}:${seconds}`;
 };
 
+export const formatFileSize = (bytes = 0) => {
+  const safeBytes = Math.max(0, bytes);
+  if (safeBytes < 1024) return `${Math.round(safeBytes)} B`;
+  const kilobytes = safeBytes / 1024;
+  if (kilobytes < 1024) return `${Math.round(kilobytes)} KB`;
+  const megabytes = kilobytes / 1024;
+  return `${megabytes >= 100 ? Math.round(megabytes) : megabytes.toFixed(1)} MB`;
+};
+
 export const getEntryPreview = (entry: JournalEntry) => {
   if (entry.body.trim()) return entry.body.trim().replace(/\s+/g, ' ');
   if (entry.audioUri) return 'Voice entry';
@@ -84,9 +93,12 @@ export const calculateStreak = (
   const cursor = new Date(referenceDate);
   cursor.setHours(12, 0, 0, 0);
 
-  // A current streak only exists after journaling today. Past entries still
-  // remain in the journal, but adding one retroactively cannot start a streak.
-  if (!days.has(toDateKey(cursor))) return 0;
+  // Keep yesterday's rhythm active throughout today so the user has the full
+  // day to write. It only ends after an entire calendar day is missed.
+  if (!days.has(toDateKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (!days.has(toDateKey(cursor))) return 0;
+  }
 
   let streak = 0;
   while (days.has(toDateKey(cursor))) {

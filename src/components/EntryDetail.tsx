@@ -18,6 +18,7 @@ import { useTheme } from '../ThemeContext';
 import { JournalEntry } from '../types';
 import { moodMeta, radii, shadows } from '../theme';
 import {
+  formatDuration,
   formatLongDate,
   formatTime,
   getEntryTitle,
@@ -25,6 +26,7 @@ import {
 import { AudioPlayer } from './AudioPlayer';
 import { Button, Icon, IconButton } from './ui';
 import { ConfirmDialog } from './ConfirmDialog';
+import { JournalVideo } from './JournalVideo';
 
 export const EntryDetail = ({
   entry,
@@ -60,6 +62,7 @@ export const EntryDetail = ({
     writtenBody ||
       entry.audioUri ||
       entry.imageUris.length ||
+      entry.videoUri ||
       entry.tags.length,
   );
   const visiblePhotos = entry.imageUris.slice(0, 5);
@@ -399,6 +402,42 @@ export const EntryDetail = ({
                   </View>
                 ) : null}
 
+                {entry.videoUri ? (
+                  <View style={styles.detailSection}>
+                    <View style={styles.sectionHeading}>
+                      <View style={styles.sectionHeadingTitle}>
+                        <Icon
+                          name="video-outline"
+                          color={palette.primary}
+                          size={16}
+                        />
+                        <Text
+                          style={[
+                            styles.sectionLabel,
+                            { color: palette.inkMuted },
+                          ]}
+                        >
+                          VIDEO
+                        </Text>
+                      </View>
+                      {entry.videoDuration ? (
+                        <Text
+                          style={[
+                            styles.sectionHint,
+                            { color: palette.inkFaint },
+                          ]}
+                        >
+                          {formatDuration(entry.videoDuration)}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <JournalVideo
+                      duration={entry.videoDuration}
+                      uri={entry.videoUri}
+                    />
+                  </View>
+                ) : null}
+
                 {entry.tags.length ? (
                   <View style={styles.detailSection}>
                     <View style={styles.sectionHeading}>
@@ -500,7 +539,7 @@ export const EntryDetail = ({
       </Modal>
       <ConfirmDialog
         confirmLabel="Delete"
-        message="This permanently removes the journal entry and its photos or voice recording, if any."
+        message="This permanently removes the entry and its photos, video, or voice recording, if any."
         onCancel={() => setDeleteConfirmationVisible(false)}
         onConfirm={() => {
           setDeleteConfirmationVisible(false);
@@ -592,9 +631,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   favoriteButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -636,12 +675,12 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   date: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.1,
   },
   time: {
-    fontSize: 11,
+    fontSize: 12,
   },
   savedRow: {
     flexDirection: 'row',
@@ -668,7 +707,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   moodText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   body: {
@@ -688,7 +727,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -705,7 +744,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   sectionHint: {
-    fontSize: 11,
+    fontSize: 12,
   },
   detailSection: {
     marginTop: 26,
@@ -768,7 +807,7 @@ const styles = StyleSheet.create({
   morePhotosLabel: {
     marginTop: 2,
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -784,7 +823,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   actionPanel: {
@@ -802,8 +841,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   actionDescription: {
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
   actions: {
     flexDirection: 'row',
@@ -852,9 +891,9 @@ const styles = StyleSheet.create({
     top: 48,
     right: 18,
     zIndex: 2,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',

@@ -10,12 +10,16 @@ import {
 } from 'react-native';
 
 import { useTheme } from '../ThemeContext';
+import { MAX_EMBEDDED_BACKUP_VIDEO_BYTES } from '../backup';
 import { BackupAction, BackupDialog } from '../components/BackupDialog';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Card, Icon, IconName } from '../components/ui';
 import { AppSettings, JournalEntry, ThemePreference } from '../types';
 import { radii } from '../theme';
-import { formatDuration, formatReminderTime } from '../utils';
+import {
+  formatDuration,
+  formatReminderTime,
+} from '../utils';
 
 const reminderTimes = [
   { hour: 7, minute: 30 },
@@ -64,6 +68,13 @@ export const SettingsScreen = ({
     0,
   );
   const daysJournaled = new Set(entries.map((entry) => entry.entryDate)).size;
+  const videoEntries = entries.filter((entry) => entry.videoUri);
+  const videoBytes = videoEntries.reduce(
+    (sum, entry) => sum + (entry.videoSizeBytes ?? 0),
+    0,
+  );
+  const videosWillBeExcluded =
+    videoBytes > MAX_EMBEDDED_BACKUP_VIDEO_BYTES;
 
   const confirmErase = () => {
     if (!entries.length) return;
@@ -203,7 +214,11 @@ export const SettingsScreen = ({
                       <Text
                         style={[
                           styles.timeChoiceText,
-                          { color: selected ? '#FFFFFF' : palette.inkMuted },
+                          {
+                            color: selected
+                              ? palette.onPrimary
+                              : palette.inkMuted,
+                          },
                         ]}
                       >
                         {formatReminderTime(time.hour, time.minute)}
@@ -406,7 +421,7 @@ export const SettingsScreen = ({
 
         <View style={[styles.promise, { backgroundColor: palette.primarySoft }]}>
           <View style={[styles.promiseMark, { backgroundColor: palette.primary }]}>
-            <Icon name="leaf" color="#FFFFFF" size={21} />
+            <Icon name="leaf" color={palette.onPrimary} size={21} />
           </View>
           <View style={styles.promiseCopy}>
             <Text style={[styles.promiseTitle, { color: palette.primaryDark }]}>
@@ -442,6 +457,9 @@ export const SettingsScreen = ({
         onChangePassword={setBackupPassword}
         onSubmit={() => void submitBackup()}
         password={backupPassword}
+        videoBytes={videoBytes}
+        videoCount={videoEntries.length}
+        videosWillBeExcluded={videosWillBeExcluded}
       />
     </>
   );
@@ -475,7 +493,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginTop: 8,
     marginLeft: 3,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.3,
   },
@@ -504,8 +522,8 @@ const styles = StyleSheet.create({
   },
   settingBody: {
     marginTop: 3,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 19,
   },
   timeBlock: {
     borderTopWidth: 1,
@@ -513,7 +531,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   timeLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     marginBottom: 10,
   },
@@ -531,7 +549,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   timeChoiceText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   themeCard: {
@@ -611,7 +629,7 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     marginTop: 4,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
@@ -656,12 +674,12 @@ const styles = StyleSheet.create({
   },
   promiseBody: {
     marginTop: 3,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
   version: {
     marginTop: 6,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
   },
 });

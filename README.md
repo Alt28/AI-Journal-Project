@@ -14,10 +14,11 @@ Demo here: https://drive.google.com/drive/folders/1MyEPgqzbru38FKHIJqzjlpJNr9aoi
 - **Update:** From the detail screen, tap Edit Entry and save the changes.
 - **Delete:** From the detail screen, tap Delete and confirm the warning.
 
-The app also includes up to five private photos per entry, local voice
-recordings, mood and tag organization, favorites, search, calendar retrieval,
-reminders, system/light/dark themes, recoverable drafts, encrypted backups, and
-an optional device-authentication lock.
+The app also includes up to five private photos and one private video of up to
+5 minutes or 200 MB per entry, local voice recordings, mood and tag organization,
+favorites, search, calendar retrieval, reminders, system/light/dark themes,
+recoverable drafts, encrypted backups, and an optional device-authentication
+lock.
 
 There is intentionally no AI, RAG, cloud sync, analytics, account, or ad
 integration in this version.
@@ -78,6 +79,6 @@ npm run bundle:android
 ```
 
 Journal metadata is saved in a local SQLite database. Existing AsyncStorage
-data is migrated automatically once. Voice recordings and optimized photo
-copies use the app's document directory so they remain local and are not
-treated as temporary cache files.
+data is migrated automatically once. Voice recordings, optimized photo copies,
+and selected videos use the app's document directory so they remain local and
+are not treated as temporary cache files.

@@ -108,7 +108,7 @@ export const BottomNavigation = ({
             shadows.floating,
           ]}
         >
-          <Icon name="add" color="#FFFFFF" size={29} />
+          <Icon name="add" color={palette.onPrimary} size={29} />
         </Pressable>
       </View>
       <View style={styles.mobileGroup}>{lastTabs.map(renderTab)}</View>
@@ -139,7 +139,7 @@ export const SideNavigation = ({
     >
       <View style={styles.brand}>
         <View style={[styles.brandMark, { backgroundColor: palette.primary }]}>
-          <Icon name="leaf" color="#FFFFFF" size={20} />
+          <Icon name="leaf" color={palette.onPrimary} size={20} />
         </View>
         <View>
           <Text style={[styles.brandName, { color: palette.ink }]}>Daybook</Text>
@@ -157,8 +157,10 @@ export const SideNavigation = ({
           { backgroundColor: palette.primary, opacity: pressed ? 0.82 : 1 },
         ]}
       >
-        <Icon name="add" color="#FFFFFF" size={21} />
-        <Text style={styles.desktopAddText}>New entry</Text>
+        <Icon name="add" color={palette.onPrimary} size={21} />
+        <Text style={[styles.desktopAddText, { color: palette.onPrimary }]}>
+          New entry
+        </Text>
       </Pressable>
 
       <View style={styles.desktopTabs}>
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   mobileTabLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   addSlot: {
@@ -283,11 +285,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   brandSub: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   desktopAdd: {
-    height: 47,
+    minHeight: 48,
     borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -304,7 +306,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   desktopTab: {
-    minHeight: 47,
+    minHeight: 48,
     borderRadius: 14,
     paddingHorizontal: 14,
     flexDirection: 'row',
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
   },
   localText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
   },
 });

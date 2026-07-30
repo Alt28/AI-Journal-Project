@@ -5,11 +5,23 @@ import { Directory, EncodingType, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 import { AppSettings, JournalEntry, PersistedJournal } from './types';
+import { createJournalVideoThumbnail } from './videoFiles';
 
-const BACKUP_VERSION = 2;
+const BACKUP_VERSION = 3;
 const ITERATIONS = 120_000;
+export const MAX_EMBEDDED_BACKUP_VIDEO_BYTES = 48 * 1024 * 1024;
+
+export interface BackupExportResult {
+  omittedVideoCount: number;
+  omittedVideoBytes: number;
+}
 
 interface BackupPhoto {
+  data: string;
+  extension: string;
+}
+
+interface BackupVideo {
   data: string;
   extension: string;
 }
@@ -20,6 +32,7 @@ interface BackupContent {
   entries: JournalEntry[];
   recordings: Record<string, string>;
   photos?: Record<string, BackupPhoto[]>;
+  videos?: Record<string, BackupVideo>;
 }
 
 interface EncryptedBackup {
@@ -93,7 +106,7 @@ const decryptContent = (raw: string, password: string): BackupContent => {
   const envelope = JSON.parse(raw) as EncryptedBackup;
   if (
     envelope.format !== 'daybook-encrypted-backup' ||
-    ![1, BACKUP_VERSION].includes(envelope.version)
+    ![1, 2, BACKUP_VERSION].includes(envelope.version)
   ) {
     throw new Error('This is not a supported Daybook backup.');
   }
@@ -122,7 +135,10 @@ const decryptContent = (raw: string, password: string): BackupContent => {
   const text = decrypted.toString(CryptoJS.enc.Utf8);
   if (!text) throw new Error('Wrong password or damaged backup file.');
   const content = JSON.parse(text) as BackupContent;
-  if (![1, BACKUP_VERSION].includes(content.version) || !Array.isArray(content.entries)) {
+  if (
+    ![1, 2, BACKUP_VERSION].includes(content.version) ||
+    !Array.isArray(content.entries)
+  ) {
     throw new Error('This backup format is not supported.');
   }
   return content;
@@ -132,8 +148,36 @@ export const exportEncryptedBackup = async (
   entries: JournalEntry[],
   password: string,
 ) => {
+  let videoBytes = 0;
+  let videoCount = 0;
+  for (const entry of entries) {
+    if (!entry.videoUri) continue;
+    try {
+      const video = new File(entry.videoUri);
+      if (!video.exists) continue;
+      videoCount += 1;
+      videoBytes += video.size;
+    } catch {
+      // Missing videos are handled like other missing media.
+    }
+  }
+  const includeVideos = videoBytes <= MAX_EMBEDDED_BACKUP_VIDEO_BYTES;
+  const backupEntries = includeVideos
+    ? entries
+    : entries.map((entry) =>
+        entry.videoUri
+          ? {
+              ...entry,
+              videoUri: undefined,
+              videoDuration: undefined,
+              videoSizeBytes: undefined,
+              videoThumbnailUri: undefined,
+            }
+          : entry,
+      );
   const recordings: Record<string, string> = {};
   const photos: Record<string, BackupPhoto[]> = {};
+  const videos: Record<string, BackupVideo> = {};
   for (const entry of entries) {
     if (entry.audioUri) {
       try {
@@ -157,14 +201,28 @@ export const exportEncryptedBackup = async (
       }
     }
     if (entryPhotos.length) photos[entry.id] = entryPhotos;
+    if (includeVideos && entry.videoUri) {
+      try {
+        const video = new File(entry.videoUri);
+        if (video.exists) {
+          videos[entry.id] = {
+            data: await video.base64(),
+            extension: video.extension || '.mp4',
+          };
+        }
+      } catch {
+        // A missing video should not prevent the remaining journal backup.
+      }
+    }
   }
   const raw = await encryptContent(
     {
       version: BACKUP_VERSION,
       exportedAt: new Date().toISOString(),
-      entries,
+      entries: backupEntries,
       recordings,
       photos,
+      videos,
     },
     password,
   );
@@ -180,6 +238,10 @@ export const exportEncryptedBackup = async (
     mimeType: 'application/octet-stream',
     UTI: 'public.data',
   });
+  return {
+    omittedVideoCount: includeVideos ? 0 : videoCount,
+    omittedVideoBytes: includeVideos ? 0 : videoBytes,
+  } satisfies BackupExportResult;
 };
 
 export const importEncryptedBackup = async (
@@ -200,6 +262,8 @@ export const importEncryptedBackup = async (
   recordingsDirectory.create({ idempotent: true, intermediates: true });
   const photosDirectory = new Directory(Paths.document, 'daybook-images');
   photosDirectory.create({ idempotent: true, intermediates: true });
+  const videosDirectory = new Directory(Paths.document, 'daybook-videos');
+  videosDirectory.create({ idempotent: true, intermediates: true });
   const entries: JournalEntry[] = [];
   for (const entry of content.entries) {
     const encoded = content.recordings[entry.id];
@@ -227,11 +291,34 @@ export const importEncryptedBackup = async (
       image.write(photo.data, { encoding: EncodingType.Base64 });
       imageUris.push(image.uri);
     });
+    const entryVideo = content.videos?.[entry.id];
+    let videoUri: string | undefined;
+    if (entryVideo) {
+      const extension = /^\.(mp4|m4v|mov|webm|3gp)$/i.test(
+        entryVideo.extension,
+      )
+        ? entryVideo.extension
+        : '.mp4';
+      const video = new File(videosDirectory, `${entry.id}${extension}`);
+      video.create({ overwrite: true, intermediates: true });
+      video.write(entryVideo.data, { encoding: EncodingType.Base64 });
+      videoUri = video.uri;
+    }
+    const videoThumbnailUri = videoUri
+      ? await createJournalVideoThumbnail(videoUri)
+      : undefined;
+    const videoSizeBytes = videoUri
+      ? new File(videoUri).size
+      : undefined;
     entries.push({
       ...entry,
       audioUri,
       audioDuration: audioUri ? entry.audioDuration : undefined,
       imageUris,
+      videoUri,
+      videoDuration: videoUri ? entry.videoDuration : undefined,
+      videoSizeBytes,
+      videoThumbnailUri,
     });
   }
   return { entries, settings: currentSettings };

@@ -50,6 +50,7 @@ export const AudioPlayer = ({
       <Pressable
         accessibilityLabel={status.playing ? 'Pause voice entry' : 'Play voice entry'}
         accessibilityRole="button"
+        hitSlop={7}
         onPress={toggle}
         style={({ pressed }) => [
           styles.play,
@@ -61,7 +62,7 @@ export const AudioPlayer = ({
       >
         <Icon
           name={status.playing ? 'pause' : 'play'}
-          color="#FFFFFF"
+          color={palette.onPrimary}
           size={compact ? 15 : 17}
         />
       </Pressable>

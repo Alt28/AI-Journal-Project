@@ -89,8 +89,10 @@ export const ConfirmDialog = ({
                 },
               ]}
             >
-              <Icon name="trash-outline" color="#FFFFFF" size={18} />
-              <Text style={styles.confirmText}>{confirmLabel}</Text>
+              <Icon name="trash-outline" color={palette.onDanger} size={18} />
+              <Text style={[styles.confirmText, { color: palette.onDanger }]}>
+                {confirmLabel}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -164,7 +166,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   confirmText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },

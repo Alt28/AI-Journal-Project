@@ -15,11 +15,13 @@ import { moodMeta, radii, shadows } from '../theme';
 import { useReducedMotion } from '../useReducedMotion';
 import {
   formatEntryDate,
+  formatDuration,
   formatTime,
   getEntryPreview,
   getEntryTitle,
 } from '../utils';
 import { AudioPlayer } from './AudioPlayer';
+import { JournalVideo } from './JournalVideo';
 import { Icon } from './ui';
 
 export const EntryCard = ({
@@ -166,6 +168,53 @@ export const EntryCard = ({
           </View>
         ) : null}
 
+        {entry.videoUri ? (
+          <View
+            style={[
+              styles.videoPreview,
+              compact && styles.compactVideoPreview,
+              { backgroundColor: palette.input },
+            ]}
+          >
+            {entry.videoThumbnailUri ? (
+              <>
+                <Image
+                  accessibilityLabel="Journal entry video thumbnail"
+                  source={{ uri: entry.videoThumbnailUri }}
+                  resizeMode="cover"
+                  style={styles.photo}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.videoPlay,
+                    { backgroundColor: palette.primary },
+                  ]}
+                >
+                  <Icon name="play" color={palette.onPrimary} size={18} />
+                </View>
+              </>
+            ) : (
+              <View pointerEvents="none">
+                <JournalVideo
+                  compact
+                  controls={false}
+                  duration={entry.videoDuration}
+                  uri={entry.videoUri}
+                />
+              </View>
+            )}
+            {entry.videoDuration ? (
+              <View style={styles.videoDuration}>
+                <Icon name="video-outline" color="#FFFFFF" size={13} />
+                <Text style={styles.videoDurationText}>
+                  {formatDuration(entry.videoDuration)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         {entry.audioUri ? (
           <AudioPlayer
             uri={entry.audioUri}
@@ -302,6 +351,48 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  videoPreview: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: radii.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  compactVideoPreview: {
+    aspectRatio: 16 / 8.5,
+    borderRadius: radii.sm,
+  },
+  videoPlay: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    width: 48,
+    height: 48,
+    marginLeft: -24,
+    marginTop: -24,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoDuration: {
+    position: 'absolute',
+    right: 9,
+    bottom: 9,
+    minWidth: 54,
+    height: 28,
+    borderRadius: 14,
+    paddingHorizontal: 9,
+    backgroundColor: 'rgba(18,24,21,0.78)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  videoDurationText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
   preview: {
     fontSize: 14,
     lineHeight: 21,
@@ -319,11 +410,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   moreTags: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

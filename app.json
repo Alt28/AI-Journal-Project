@@ -21,7 +21,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#356B5B",
         "foregroundImage": "./assets/daybook-adaptive-icon.png",
-        "monochromeImage": "./assets/daybook-adaptive-icon.png"
+        "monochromeImage": "./assets/daybook-monochrome-icon.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
@@ -45,7 +45,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Daybook to add selected photos to private journal entries.",
+          "photosPermission": "Allow Daybook to add selected photos and videos to private journal entries.",
           "cameraPermission": false
         }
       ],
@@ -62,7 +62,8 @@
             "image": "./assets/daybook-splash.png"
           }
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

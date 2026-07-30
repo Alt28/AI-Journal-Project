@@ -17,6 +17,10 @@ export interface JournalEntry {
   audioUri?: string;
   audioDuration?: number;
   imageUris: string[];
+  videoUri?: string;
+  videoDuration?: number;
+  videoSizeBytes?: number;
+  videoThumbnailUri?: string;
 }
 
 export interface AppSettings {
@@ -45,6 +49,10 @@ export interface JournalDraft {
   audioUri?: string;
   audioDuration?: number;
   imageUris: string[];
+  videoUri?: string;
+  videoDuration?: number;
+  videoSizeBytes?: number;
+  videoThumbnailUri?: string;
   updatedAt: string;
 }
 

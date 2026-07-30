@@ -9,6 +9,7 @@ export interface Palette {
   inkMuted: string;
   inkFaint: string;
   primary: string;
+  onPrimary: string;
   primaryDark: string;
   primarySoft: string;
   accent: string;
@@ -16,6 +17,7 @@ export interface Palette {
   border: string;
   divider: string;
   danger: string;
+  onDanger: string;
   dangerSoft: string;
   shadow: string;
   nav: string;
@@ -29,9 +31,10 @@ export const lightPalette: Palette = {
   elevated: '#FFFFFF',
   input: '#F0EDE6',
   ink: '#202723',
-  inkMuted: '#66706A',
-  inkFaint: '#68716C',
+  inkMuted: '#5F6963',
+  inkFaint: '#626B66',
   primary: '#356859',
+  onPrimary: '#FFFFFF',
   primaryDark: '#244A40',
   primarySoft: '#DDEAE4',
   accent: '#D99C5E',
@@ -39,6 +42,7 @@ export const lightPalette: Palette = {
   border: '#E4E0D8',
   divider: '#EBE7DF',
   danger: '#B9544F',
+  onDanger: '#FFFFFF',
   dangerSoft: '#F8E2DF',
   shadow: '#1C2822',
   nav: 'rgba(252,250,246,0.97)',
@@ -55,6 +59,7 @@ export const darkPalette: Palette = {
   inkMuted: '#ADB6B0',
   inkFaint: '#939D97',
   primary: '#7EB09E',
+  onPrimary: '#151A17',
   primaryDark: '#A3CCBD',
   primarySoft: '#263B33',
   accent: '#E2A86D',
@@ -62,6 +67,7 @@ export const darkPalette: Palette = {
   border: '#343D38',
   divider: '#2A332E',
   danger: '#E17D76',
+  onDanger: '#151A17',
   dangerSoft: '#402B2A',
   shadow: '#000000',
   nav: 'rgba(28,35,31,0.97)',

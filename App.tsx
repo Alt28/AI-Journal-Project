@@ -24,6 +24,12 @@ import { ThemeProvider } from './src/ThemeContext';
 import { deleteAudioFile } from './src/audioFiles';
 import { deleteImageFiles } from './src/imageFiles';
 import {
+  createJournalVideoThumbnail,
+  deleteVideoFile,
+  deleteVideoThumbnailFile,
+  getJournalVideoSize,
+} from './src/videoFiles';
+import {
   exportEncryptedBackup,
   importEncryptedBackup,
 } from './src/backup';
@@ -85,6 +91,7 @@ function JournalApp() {
   const initialUnlockAttempted = useRef(false);
   const splashHidden = useRef(false);
   const recoveredDraftToastPending = useRef(false);
+  const videoThumbnailBackfillStarted = useRef(false);
   const settingsRef = useRef(settings);
   const palette = useMemo(
     () => resolvePalette(settings.theme, systemScheme === 'dark'),
@@ -132,6 +139,7 @@ function JournalApp() {
 
   const loadAppData = useCallback(async () => {
     setLoadFailure('');
+    videoThumbnailBackfillStarted.current = false;
     try {
       const [journal, draft] = await Promise.all([
         loadJournalData(),
@@ -162,6 +170,58 @@ function JournalApp() {
   useEffect(() => {
     void loadAppData();
   }, [loadAppData]);
+
+  useEffect(() => {
+    if (
+      !loaded ||
+      loadFailure ||
+      videoThumbnailBackfillStarted.current
+    ) {
+      return;
+    }
+    videoThumbnailBackfillStarted.current = true;
+    let cancelled = false;
+    const missing = entries.filter(
+      (entry) =>
+        entry.videoUri &&
+        (!entry.videoThumbnailUri || !entry.videoSizeBytes),
+    );
+
+    void (async () => {
+      for (const entry of missing) {
+        const thumbnailUri = entry.videoThumbnailUri
+          ? undefined
+          : await createJournalVideoThumbnail(entry.videoUri!);
+        const videoSizeBytes =
+          entry.videoSizeBytes ?? getJournalVideoSize(entry.videoUri);
+        if (!thumbnailUri && !videoSizeBytes) continue;
+        if (cancelled) {
+          if (thumbnailUri) {
+            await deleteVideoThumbnailFile(thumbnailUri);
+          }
+          return;
+        }
+        setEntries((current) =>
+          current.map((item) =>
+            item.id === entry.id &&
+            item.videoUri === entry.videoUri
+              ? {
+                  ...item,
+                  videoSizeBytes:
+                    item.videoSizeBytes ?? videoSizeBytes,
+                  videoThumbnailUri:
+                    item.videoThumbnailUri ?? thumbnailUri,
+                }
+              : item,
+          ),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadFailure, loaded]);
 
   const hideNativeSplash = useCallback(() => {
     if (!loaded || splashHidden.current) return;
@@ -318,6 +378,15 @@ function JournalApp() {
     if (previous?.audioUri && previous.audioUri !== entry.audioUri) {
       void deleteAudioFile(previous.audioUri);
     }
+    if (previous?.videoUri && previous.videoUri !== entry.videoUri) {
+      void deleteVideoFile(previous.videoUri);
+    }
+    if (
+      previous?.videoThumbnailUri &&
+      previous.videoThumbnailUri !== entry.videoThumbnailUri
+    ) {
+      void deleteVideoThumbnailFile(previous.videoThumbnailUri);
+    }
     if (previous) {
       const retainedImages = new Set(entry.imageUris);
       void deleteImageFiles(
@@ -338,6 +407,8 @@ function JournalApp() {
   const deleteEntry = (entry: JournalEntry) => {
     void deleteAudioFile(entry.audioUri);
     void deleteImageFiles(entry.imageUris);
+    void deleteVideoFile(entry.videoUri);
+    void deleteVideoThumbnailFile(entry.videoThumbnailUri);
     setEntries((current) => current.filter((item) => item.id !== entry.id));
     setEditor(null);
     void discardJournalDraft();
@@ -411,8 +482,14 @@ function JournalApp() {
   };
 
   const exportBackup = async (password: string) => {
-    await exportEncryptedBackup(entries, password);
-    showToast('Encrypted backup ready to save');
+    const result = await exportEncryptedBackup(entries, password);
+    showToast(
+      result.omittedVideoCount
+        ? `Backup saved without ${result.omittedVideoCount} large ${
+            result.omittedVideoCount === 1 ? 'video' : 'videos'
+          }`
+        : 'Encrypted backup ready to save',
+    );
   };
 
   const importBackup = async (password: string) => {
@@ -421,6 +498,10 @@ function JournalApp() {
     await Promise.all([
       ...entries.map((entry) => deleteAudioFile(entry.audioUri)),
       ...entries.map((entry) => deleteImageFiles(entry.imageUris)),
+      ...entries.map((entry) => deleteVideoFile(entry.videoUri)),
+      ...entries.map((entry) =>
+        deleteVideoThumbnailFile(entry.videoThumbnailUri),
+      ),
     ]);
     setEntries(restored.entries);
     setDetailEntryId(null);
@@ -433,9 +514,15 @@ function JournalApp() {
   const eraseEntries = () => {
     const recordings = entries.map((entry) => entry.audioUri).filter(Boolean);
     const images = entries.flatMap((entry) => entry.imageUris);
+    const videos = entries.map((entry) => entry.videoUri).filter(Boolean);
+    const videoThumbnails = entries
+      .map((entry) => entry.videoThumbnailUri)
+      .filter(Boolean);
     void Promise.all([
       ...recordings.map((uri) => deleteAudioFile(uri)),
       deleteImageFiles(images),
+      ...videos.map((uri) => deleteVideoFile(uri)),
+      ...videoThumbnails.map((uri) => deleteVideoThumbnailFile(uri)),
     ]);
     setEntries([]);
     setDetailEntryId(null);

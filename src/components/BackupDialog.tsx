@@ -12,6 +12,7 @@ import {
 
 import { useTheme } from '../ThemeContext';
 import { radii, shadows } from '../theme';
+import { formatFileSize } from '../utils';
 import { Icon } from './ui';
 
 export type BackupAction = 'export' | 'import';
@@ -24,6 +25,9 @@ export const BackupDialog = ({
   onChangePassword,
   onCancel,
   onSubmit,
+  videoBytes,
+  videoCount,
+  videosWillBeExcluded,
 }: {
   action: BackupAction | null;
   busy: boolean;
@@ -32,6 +36,9 @@ export const BackupDialog = ({
   onChangePassword: (value: string) => void;
   onCancel: () => void;
   onSubmit: () => void;
+  videoBytes: number;
+  videoCount: number;
+  videosWillBeExcluded: boolean;
 }) => {
   const palette = useTheme();
   const exporting = action === 'export';
@@ -80,7 +87,11 @@ export const BackupDialog = ({
           </Text>
           <Text style={[styles.message, { color: palette.inkMuted }]}>
             {exporting
-              ? 'Choose a password with at least 6 characters. You will need it to restore this file.'
+              ? videosWillBeExcluded
+                ? `Your ${videoCount === 1 ? 'video uses' : 'videos use'} ${formatFileSize(
+                    videoBytes,
+                  )}. To keep this export reliable, entries, photos, and recordings will be backed up, but videos will not. Keep the original clips separately.`
+                : 'Choose a password with at least 6 characters. Entries and attached media are included and protected.'
               : 'Enter the backup password, then choose a .daybook file. Restoring replaces the entries currently on this device.'}
           </Text>
           <TextInput
@@ -144,16 +155,22 @@ export const BackupDialog = ({
               ]}
             >
               {busy ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={palette.onPrimary} size="small" />
               ) : (
                 <Icon
                   name={exporting ? 'share-outline' : 'folder-open-outline'}
-                  color="#FFFFFF"
+                  color={palette.onPrimary}
                   size={18}
                 />
               )}
-              <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
-                {busy ? 'Working…' : exporting ? 'Save backup' : 'Choose file'}
+              <Text style={[styles.buttonText, { color: palette.onPrimary }]}>
+                {busy
+                  ? 'Working…'
+                  : exporting && videosWillBeExcluded
+                    ? 'Save without videos'
+                    : exporting
+                      ? 'Save backup'
+                      : 'Choose file'}
               </Text>
             </Pressable>
           </View>

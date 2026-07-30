@@ -11,8 +11,8 @@
     "bundle:android": "expo export --platform android"
   },
   "dependencies": {
-    "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@tabler/icons-react-native": "^3.45.0",
     "crypto-js": "^4.2.0",
     "expo": "~57.0.8",
     "expo-asset": "~57.0.7",
@@ -31,9 +31,11 @@
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.1",
+    "expo-video": "~57.0.2",
     "react": "19.2.3",
     "react-native": "0.86.0",
-    "react-native-safe-area-context": "~5.7.0"
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
