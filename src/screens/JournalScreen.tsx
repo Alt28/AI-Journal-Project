@@ -17,14 +17,13 @@ import { JournalEntry } from '../types';
 import { radii } from '../theme';
 import { formatDuration } from '../utils';
 
-type Filter = 'all' | 'favorites' | 'voice' | 'photos' | 'videos';
+type Filter = 'all' | 'voice' | 'photos' | 'videos';
 
 const filterOptions = [
-  { icon: 'book-outline', key: 'all', label: 'All' },
-  { icon: 'heart-outline', key: 'favorites', label: 'Favorites' },
-  { icon: 'mic-outline', key: 'voice', label: 'Voice' },
-  { icon: 'images-outline', key: 'photos', label: 'Photos' },
-  { icon: 'video-outline', key: 'videos', label: 'Videos' },
+  { key: 'all', label: 'All' },
+  { key: 'voice', label: 'Voice' },
+  { key: 'photos', label: 'Photos' },
+  { key: 'videos', label: 'Videos' },
 ] as const;
 
 type MonthSection = {
@@ -67,6 +66,7 @@ export const JournalScreen = ({
   const palette = useTheme();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -77,7 +77,7 @@ export const JournalScreen = ({
           b.createdAt.localeCompare(a.createdAt),
       )
       .filter((entry) => {
-        if (filter === 'favorites' && !entry.favorite) return false;
+        if (favoritesOnly && !entry.favorite) return false;
         if (filter === 'voice' && !entry.audioUri) return false;
         if (filter === 'photos' && !entry.imageUris.length) return false;
         if (filter === 'videos' && !entry.videoUri) return false;
@@ -87,7 +87,7 @@ export const JournalScreen = ({
           .toLowerCase()
           .includes(normalized);
       });
-  }, [entries, filter, query]);
+  }, [entries, favoritesOnly, filter, query]);
 
   const monthSections = useMemo<MonthSection[]>(() => {
     const now = new Date();
@@ -122,8 +122,16 @@ export const JournalScreen = ({
       ? 'Your journal is ready'
       : query
         ? 'No matching entries'
-        : filter === 'favorites'
-          ? 'No favorites yet'
+        : favoritesOnly
+          ? filter === 'all'
+            ? 'No favorites yet'
+            : `No favorite ${
+                filter === 'photos'
+                  ? 'photo'
+                  : filter === 'videos'
+                    ? 'video'
+                    : 'voice'
+              } entries yet`
           : filter === 'voice'
             ? 'No voice entries yet'
             : filter === 'photos'
@@ -134,6 +142,29 @@ export const JournalScreen = ({
     entries.length === 0
       ? 'Write about your day or save a private voice entry.'
       : 'Try changing the search or filter to find what you need.';
+
+  const resultLabel = (() => {
+    if (filter === 'all' && !favoritesOnly) {
+      return `${filtered.length} ${
+        filtered.length === 1 ? 'result' : 'results'
+      }`;
+    }
+
+    const media =
+      filter === 'photos'
+        ? 'photo'
+        : filter === 'videos'
+          ? 'video'
+          : filter === 'voice'
+            ? 'voice'
+            : '';
+    const descriptor = [favoritesOnly ? 'favorite' : '', media]
+      .filter(Boolean)
+      .join(' ');
+    return `${filtered.length} ${descriptor}${
+      descriptor ? ' ' : ''
+    }${filtered.length === 1 ? 'entry' : 'entries'}`;
+  })();
 
   return (
     <SectionList
@@ -192,64 +223,87 @@ export const JournalScreen = ({
           </View>
 
           <View style={styles.filters}>
-            {filterOptions.map((option) => {
-              const selected = filter === option.key;
-              return (
-                <Pressable
-                  accessibilityLabel={`Show ${option.label.toLowerCase()} entries`}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  key={option.key}
-                  onPress={() => setFilter(option.key)}
-                  style={({ pressed }) => [
-                    styles.filterButton,
-                    {
-                      backgroundColor: selected
-                        ? palette.primarySoft
-                        : palette.surface,
-                      borderColor: selected
-                        ? palette.primary
-                        : palette.border,
-                      opacity: pressed ? 0.7 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    },
-                  ]}
-                >
-                  <Icon
-                    name={option.icon}
-                    color={selected ? palette.primary : palette.inkMuted}
-                    size={15}
-                  />
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.filterText,
+            <View
+              style={[
+                styles.filterGroup,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              {filterOptions.map((option) => {
+                const selected = filter === option.key;
+                return (
+                  <Pressable
+                    accessibilityLabel={`Show ${option.label.toLowerCase()} entries`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    key={option.key}
+                    onPress={() => setFilter(option.key)}
+                    style={({ pressed }) => [
+                      styles.filterButton,
                       {
-                        color: selected ? palette.primary : palette.inkMuted,
+                        backgroundColor: selected
+                          ? palette.primarySoft
+                          : 'transparent',
+                        opacity: pressed ? 0.7 : 1,
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
                       },
                     ]}
                   >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.filterText,
+                        {
+                          color: selected ? palette.primary : palette.inkMuted,
+                        },
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable
+              accessibilityHint="Can be combined with any entry type"
+              accessibilityLabel={
+                favoritesOnly
+                  ? 'Show all favorite and non-favorite entries'
+                  : 'Show favorites only'
+              }
+              accessibilityRole="button"
+              accessibilityState={{ selected: favoritesOnly }}
+              onPress={() => setFavoritesOnly((current) => !current)}
+              style={({ pressed }) => [
+                styles.favoriteFilter,
+                {
+                  backgroundColor: favoritesOnly
+                    ? palette.primarySoft
+                    : palette.surface,
+                  borderColor: favoritesOnly
+                    ? palette.primary
+                    : palette.border,
+                  opacity: pressed ? 0.7 : 1,
+                  transform: [{ scale: pressed ? 0.94 : 1 }],
+                },
+              ]}
+            >
+              <Icon
+                name={favoritesOnly ? 'heart' : 'heart-outline'}
+                color={favoritesOnly ? palette.primary : palette.inkMuted}
+                size={19}
+              />
+            </Pressable>
           </View>
 
-          {filtered.length && (query.trim() || filter !== 'all') ? (
+          {filtered.length &&
+          (query.trim() || filter !== 'all' || favoritesOnly) ? (
             <View style={styles.resultRow}>
               <Text style={[styles.resultLabel, { color: palette.inkMuted }]}>
-                {filter === 'photos'
-                  ? `${filtered.length} ${
-                      filtered.length === 1 ? 'photo entry' : 'photo entries'
-                    }`
-                  : filter === 'videos'
-                    ? `${filtered.length} ${
-                        filtered.length === 1 ? 'video entry' : 'video entries'
-                      }`
-                  : `${filtered.length} ${
-                      filtered.length === 1 ? 'result' : 'results'
-                    }`}
+                {resultLabel}
               </Text>
               <View style={styles.sortLabel}>
                 <Icon
@@ -494,26 +548,39 @@ const styles = StyleSheet.create({
   filters: {
     paddingVertical: 15,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 7,
+    alignItems: 'center',
+    gap: 8,
   },
-  filterButton: {
-    flexBasis: '30%',
-    flexGrow: 1,
+  filterGroup: {
+    flex: 1,
     minWidth: 0,
     minHeight: 48,
     borderRadius: 17,
     borderWidth: 1,
-    paddingHorizontal: 5,
+    padding: 3,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  filterButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 40,
+    borderRadius: 13,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
   },
   filterText: {
     minWidth: 0,
     fontSize: 12,
     fontWeight: '700',
+  },
+  favoriteFilter: {
+    width: 48,
+    height: 48,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   resultRow: {
     marginTop: 3,
