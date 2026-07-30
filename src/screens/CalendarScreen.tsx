@@ -105,7 +105,7 @@ export const CalendarScreen = ({
           </View>
           {awayFromToday ? (
             <Button
-              label="Back to today"
+              label="Current date"
               icon="calendar-outline"
               compact
               variant="secondary"
