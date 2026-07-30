@@ -20,7 +20,8 @@
       ],
       "adaptiveIcon": {
         "backgroundColor": "#356B5B",
-        "foregroundImage": "./assets/daybook-icon.png"
+        "foregroundImage": "./assets/daybook-adaptive-icon.png",
+        "monochromeImage": "./assets/daybook-adaptive-icon.png"
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",

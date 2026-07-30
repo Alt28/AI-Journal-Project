@@ -6,7 +6,10 @@ import {
   ActivityIndicator,
   Animated,
   AppState,
+  BackHandler,
   Easing,
+  InteractionManager,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -65,11 +68,15 @@ function JournalApp() {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [activeTab, setActiveTab] = useState<AppTab>('today');
   const [editor, setEditor] = useState<EditorRequest | null>(null);
+  const [pendingEditor, setPendingEditor] = useState<EditorRequest | null>(
+    null,
+  );
   const [detailEntryId, setDetailEntryId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const [appLocked, setAppLocked] = useState(false);
   const [authenticating, setAuthenticating] = useState(false);
   const [loadFailure, setLoadFailure] = useState('');
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const reducedMotion = useReducedMotion();
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const screenMotion = useRef(new Animated.Value(1)).current;
@@ -85,6 +92,43 @@ function JournalApp() {
   );
   const detailEntry =
     entries.find((entry) => entry.id === detailEntryId) ?? null;
+
+  useEffect(() => {
+    if (detailEntryId !== null || !pendingEditor) return;
+
+    const transition = InteractionManager.runAfterInteractions(() => {
+      setEditor(pendingEditor);
+      setPendingEditor(null);
+    });
+
+    return () => transition.cancel();
+  }, [detailEntryId, pendingEditor]);
+
+  useEffect(() => {
+    if (
+      Platform.OS !== 'android' ||
+      !loaded ||
+      appLocked ||
+      Boolean(loadFailure)
+    ) {
+      return;
+    }
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (editor || detailEntryId) return false;
+        if (activeTab !== 'today') {
+          setActiveTab('today');
+          return true;
+        }
+        setExitConfirmOpen(true);
+        return true;
+      },
+    );
+
+    return () => subscription.remove();
+  }, [activeTab, appLocked, detailEntryId, editor, loadFailure, loaded]);
 
   const loadAppData = useCallback(async () => {
     setLoadFailure('');
@@ -637,11 +681,103 @@ function JournalApp() {
           onClose={() => setDetailEntryId(null)}
           onDelete={deleteEntry}
           onEdit={(entry) => {
+            setPendingEditor({ entry });
             setDetailEntryId(null);
-            setEditor({ entry });
           }}
           onToggleFavorite={toggleFavorite}
         />
+        <Modal
+          accessibilityViewIsModal
+          animationType="fade"
+          onRequestClose={() => setExitConfirmOpen(false)}
+          statusBarTranslucent
+          transparent
+          visible={exitConfirmOpen}
+        >
+          <View style={styles.exitDialogRoot}>
+            <Pressable
+              accessibilityLabel="Cancel exit"
+              accessibilityRole="button"
+              onPress={() => setExitConfirmOpen(false)}
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: palette.overlay },
+              ]}
+            />
+            <View
+              style={[
+                styles.exitDialog,
+                {
+                  backgroundColor: palette.elevated,
+                  borderColor: palette.border,
+                  shadowColor: palette.shadow,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.exitDialogIcon,
+                  { backgroundColor: palette.primarySoft },
+                ]}
+              >
+                <Icon name="leaf-outline" color={palette.primary} size={24} />
+              </View>
+              <Text style={[styles.exitDialogTitle, { color: palette.ink }]}>
+                Exit Daybook?
+              </Text>
+              <Text
+                style={[styles.exitDialogBody, { color: palette.inkMuted }]}
+              >
+                Are you sure you want to close the app?
+              </Text>
+              <View style={styles.exitDialogActions}>
+                <Pressable
+                  accessibilityLabel="Stay in Daybook"
+                  accessibilityRole="button"
+                  onPress={() => setExitConfirmOpen(false)}
+                  style={({ pressed }) => [
+                    styles.exitDialogButton,
+                    {
+                      backgroundColor: palette.input,
+                      opacity: pressed ? 0.72 : 1,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.exitDialogButtonText,
+                      { color: palette.ink },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Exit Daybook"
+                  accessibilityRole="button"
+                  onPress={() => BackHandler.exitApp()}
+                  style={({ pressed }) => [
+                    styles.exitDialogButton,
+                    {
+                      backgroundColor: palette.primary,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <Icon name="exit-outline" color="#FFFFFF" size={18} />
+                  <Text
+                    style={[
+                      styles.exitDialogButtonText,
+                      styles.exitDialogExitText,
+                    ]}
+                  >
+                    Exit
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ThemeProvider>
   );
@@ -794,5 +930,64 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
+  },
+  exitDialogRoot: {
+    flex: 1,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exitDialog: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 28,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 16,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 24,
+  },
+  exitDialogIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exitDialogTitle: {
+    marginTop: 16,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+  },
+  exitDialogBody: {
+    marginTop: 7,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  exitDialogActions: {
+    width: '100%',
+    marginTop: 22,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  exitDialogButton: {
+    flex: 1,
+    minHeight: 50,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  exitDialogButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  exitDialogExitText: {
+    color: '#FFFFFF',
   },
 });

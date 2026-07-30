@@ -10,8 +10,12 @@ import {
 import { useTheme } from '../ThemeContext';
 import { EntryCard } from '../components/EntryCard';
 import { Button, Card, EmptyState, Icon, IconButton, SectionHeader } from '../components/ui';
-import { JournalEntry } from '../types';
-import { radii } from '../theme';
+import {
+  getDailyEntrySummaries,
+  getMoodDistribution,
+} from '../insights';
+import { JournalEntry, Mood } from '../types';
+import { moodMeta, radii } from '../theme';
 import {
   calendarDays,
   formatLongDate,
@@ -22,6 +26,7 @@ import {
 } from '../utils';
 
 const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const moods = Object.keys(moodMeta) as Mood[];
 
 export const CalendarScreen = ({
   entries,
@@ -54,13 +59,18 @@ export const CalendarScreen = ({
     setSelectedDate(focusedDate);
   }, [focusedDate]);
 
-  const entryCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    entries.forEach((entry) => {
-      counts.set(entry.entryDate, (counts.get(entry.entryDate) ?? 0) + 1);
-    });
-    return counts;
+  const daySummaries = useMemo(() => {
+    return getDailyEntrySummaries(entries);
   }, [entries]);
+
+  const monthMoodSummary = useMemo(() => {
+    const monthPrefix = toDateKey(month).slice(0, 7);
+    return getMoodDistribution(
+      entries
+        .filter((entry) => entry.entryDate.startsWith(monthPrefix))
+        .map((entry) => entry.mood),
+    );
+  }, [entries, month]);
 
   const selectedEntries = useMemo(
     () =>
@@ -115,6 +125,13 @@ export const CalendarScreen = ({
         </View>
 
         <Card style={styles.calendar} elevated>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.calendarGlow,
+              { backgroundColor: palette.primarySoft },
+            ]}
+          />
           <View style={styles.monthHeader}>
             <IconButton
               icon="chevron-back"
@@ -122,9 +139,14 @@ export const CalendarScreen = ({
               size={36}
               onPress={() => changeMonth(-1)}
             />
-            <Text style={[styles.month, { color: palette.ink }]}>
-              {monthLabel(month)}
-            </Text>
+            <View style={styles.monthHeading}>
+              <Text style={[styles.month, { color: palette.ink }]}>
+                {monthLabel(month)}
+              </Text>
+              <Text style={[styles.monthCaption, { color: palette.inkFaint }]}>
+                MOODS & MEMORIES
+              </Text>
+            </View>
             <IconButton
               disabled={viewingCurrentMonth}
               icon="chevron-forward"
@@ -151,7 +173,9 @@ export const CalendarScreen = ({
 
               const date = new Date(month.getFullYear(), month.getMonth(), day);
               const key = toDateKey(date);
-              const count = entryCounts.get(key) ?? 0;
+              const summary = daySummaries.get(key);
+              const count = summary?.entryCount ?? 0;
+              const mood = summary?.mood ? moodMeta[summary.mood] : null;
               const selected = selectedDate === key;
               const isToday = today === key;
               const isFuture = key > today;
@@ -160,18 +184,36 @@ export const CalendarScreen = ({
                 <Pressable
                   accessibilityLabel={`${formatLongDate(key)}${
                     count ? `, ${count} ${count === 1 ? 'entry' : 'entries'}` : ''
-                  }${isFuture ? ', future date unavailable' : ''}`}
+                  }${mood ? `, ${mood.label} mood` : ''}${
+                    isFuture ? ', future date unavailable' : ''
+                  }`}
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: isFuture }}
+                  accessibilityState={{ disabled: isFuture, selected }}
                   disabled={isFuture}
                   key={key}
                   onPress={() => setSelectedDate(key)}
-                  style={[styles.dayCell, isFuture && styles.futureDay]}
+                  style={({ pressed }) => [
+                    styles.dayCell,
+                    isFuture && styles.futureDay,
+                    { transform: [{ scale: pressed ? 0.94 : 1 }] },
+                  ]}
                 >
                   <View
                     style={[
-                      styles.dayCircle,
-                      selected && { backgroundColor: palette.primary },
+                      styles.dayTile,
+                      {
+                        backgroundColor: mood
+                          ? palette.isDark
+                            ? mood.dark
+                            : mood.light
+                          : selected
+                            ? palette.primarySoft
+                            : 'transparent',
+                      },
+                      selected && {
+                        borderColor: palette.primary,
+                        borderWidth: 2,
+                      },
                       isToday &&
                         !selected && {
                           borderColor: palette.primary,
@@ -183,35 +225,181 @@ export const CalendarScreen = ({
                       style={[
                         styles.dayText,
                         {
-                          color: selected
-                            ? '#FFFFFF'
-                            : isToday
-                              ? palette.primary
-                              : palette.ink,
+                          color: isToday ? palette.primaryDark : palette.ink,
                         },
                       ]}
                     >
                       {day}
                     </Text>
-                  </View>
-                  <View style={styles.dots}>
-                    {Array.from({ length: Math.min(count, 3) }, (_, dot) => (
+                    {mood ? (
+                      <Text style={styles.dayMoodEmoji}>{mood.emoji}</Text>
+                    ) : count ? (
+                      <View style={styles.journalMarker}>
+                        <Icon
+                          name="book-outline"
+                          color={palette.primary}
+                          size={13}
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.daySpacer} />
+                    )}
+                    {count > 1 ? (
                       <View
-                        key={dot}
                         style={[
-                          styles.dot,
+                          styles.entryCount,
                           {
-                            backgroundColor: selected
-                              ? palette.accent
-                              : palette.primary,
+                            backgroundColor: palette.isDark
+                              ? palette.elevated
+                              : '#FFFFFF',
                           },
                         ]}
-                      />
-                    ))}
+                      >
+                        <Text
+                          style={[styles.entryCountText, { color: palette.ink }]}
+                        >
+                          {count > 9 ? '9+' : count}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 </Pressable>
               );
             })}
+          </View>
+
+          <View
+            style={[
+              styles.moodStory,
+              { backgroundColor: palette.input },
+            ]}
+          >
+            <View style={styles.moodStoryHeader}>
+              <View
+                style={[
+                  styles.moodStoryFace,
+                  {
+                    backgroundColor: monthMoodSummary.dominantMood
+                      ? palette.isDark
+                        ? moodMeta[monthMoodSummary.dominantMood].dark
+                        : moodMeta[monthMoodSummary.dominantMood].light
+                      : palette.primarySoft,
+                  },
+                ]}
+              >
+                {monthMoodSummary.dominantMood ? (
+                  <Text style={styles.moodStoryEmoji}>
+                    {moodMeta[monthMoodSummary.dominantMood].emoji}
+                  </Text>
+                ) : monthMoodSummary.isMixed ? (
+                  <Icon
+                    name="color-palette-outline"
+                    color={palette.primary}
+                    size={18}
+                  />
+                ) : (
+                  <Icon name="sparkles" color={palette.primary} size={17} />
+                )}
+              </View>
+              <View style={styles.moodStoryCopy}>
+                <Text
+                  style={[styles.moodStoryEyebrow, { color: palette.primary }]}
+                >
+                  THIS MONTH
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.moodStoryTitle, { color: palette.ink }]}
+                >
+                  {monthMoodSummary.dominantMood
+                    ? `${
+                        moodMeta[monthMoodSummary.dominantMood].label
+                      } is showing up most`
+                    : monthMoodSummary.isMixed
+                      ? 'Your top moods are evenly matched'
+                    : 'Your mood story starts here'}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.moodStoryCount,
+                  { backgroundColor: palette.surface },
+                ]}
+              >
+                <Text
+                  style={[styles.moodStoryCountText, { color: palette.inkMuted }]}
+                >
+                  {monthMoodSummary.total}
+                </Text>
+                <Text
+                  style={[styles.moodStoryCountLabel, { color: palette.inkFaint }]}
+                >
+                  {monthMoodSummary.total === 1
+                    ? 'MOOD ENTRY'
+                    : 'MOOD ENTRIES'}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.moodDistribution,
+                { backgroundColor: palette.surface },
+              ]}
+            >
+              {monthMoodSummary.total ? (
+                moods.map((moodKey) =>
+                  monthMoodSummary.counts[moodKey] ? (
+                    <View
+                      key={moodKey}
+                      style={{
+                        flex: monthMoodSummary.counts[moodKey],
+                        backgroundColor: palette.isDark
+                          ? moodMeta[moodKey].dark
+                          : moodMeta[moodKey].light,
+                      }}
+                    />
+                  ) : null,
+                )
+              ) : (
+                <View
+                  style={[
+                    styles.emptyDistribution,
+                    { backgroundColor: palette.primarySoft },
+                  ]}
+                />
+              )}
+            </View>
+
+            <Text style={[styles.moodStoryNote, { color: palette.inkFaint }]}>
+              Every journal entry with a mood counts
+            </Text>
+
+            <View style={styles.moodKey}>
+              {moods.map((moodKey) => {
+                const item = moodMeta[moodKey];
+                return (
+                  <View key={moodKey} style={styles.moodKeyItem}>
+                    <View
+                      style={[
+                        styles.moodKeyDot,
+                        {
+                          backgroundColor: palette.isDark
+                            ? item.dark
+                            : item.light,
+                        },
+                      ]}
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.moodKeyLabel, { color: palette.inkMuted }]}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         </Card>
 
@@ -301,18 +489,37 @@ const styles = StyleSheet.create({
   },
   calendar: {
     padding: 14,
+    overflow: 'hidden',
+  },
+  calendarGlow: {
+    position: 'absolute',
+    top: -52,
+    right: -42,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    opacity: 0.48,
   },
   monthHeader: {
-    height: 48,
+    height: 54,
     paddingHorizontal: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  monthHeading: {
+    alignItems: 'center',
+  },
   month: {
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.3,
+  },
+  monthCaption: {
+    marginTop: 3,
+    fontSize: 7,
+    fontWeight: '800',
+    letterSpacing: 1.1,
   },
   weekdays: {
     flexDirection: 'row',
@@ -332,35 +539,143 @@ const styles = StyleSheet.create({
   },
   dayCell: {
     width: `${100 / 7}%`,
-    minHeight: 54,
+    minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
   },
   futureDay: {
     opacity: 0.3,
   },
-  dayCircle: {
-    width: 35,
-    height: 35,
-    borderRadius: 18,
+  dayTile: {
+    width: '88%',
+    height: 54,
+    borderRadius: 14,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  dayText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dayMoodEmoji: {
+    fontSize: 17,
+    lineHeight: 21,
+  },
+  journalMarker: {
+    height: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayText: {
-    fontSize: 13,
+  daySpacer: {
+    height: 12,
+  },
+  entryCount: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  entryCountText: {
+    fontSize: 7,
+    fontWeight: '800',
+  },
+  moodStory: {
+    marginTop: 14,
+    borderRadius: 20,
+    padding: 13,
+    gap: 11,
+  },
+  moodStoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  moodStoryFace: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moodStoryEmoji: {
+    fontSize: 19,
+  },
+  moodStoryCopy: {
+    flex: 1,
+  },
+  moodStoryEyebrow: {
+    fontSize: 7,
+    fontWeight: '800',
+    letterSpacing: 0.95,
+  },
+  moodStoryTitle: {
+    marginTop: 3,
+    fontSize: 12,
     fontWeight: '700',
   },
-  dots: {
-    position: 'absolute',
-    bottom: 3,
-    height: 4,
+  moodStoryCount: {
+    minWidth: 52,
+    minHeight: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+  moodStoryCountText: {
+    fontSize: 13,
+    lineHeight: 15,
+    fontWeight: '800',
+  },
+  moodStoryCountLabel: {
+    marginTop: 1,
+    fontSize: 6,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  moodDistribution: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
     flexDirection: 'row',
     gap: 2,
   },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 2,
+  emptyDistribution: {
+    flex: 1,
+    opacity: 0.65,
+  },
+  moodStoryNote: {
+    marginTop: -3,
+    fontSize: 7,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  moodKey: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  moodKeyItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  moodKeyDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  moodKeyLabel: {
+    fontSize: 8,
+    fontWeight: '600',
   },
   addDate: {
     minHeight: 48,

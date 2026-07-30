@@ -9,6 +9,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -34,6 +36,7 @@ import {
 } from '../imageFiles';
 import { EditorRequest, JournalDraft, JournalEntry, Mood } from '../types';
 import { moodMeta, radii, shadows } from '../theme';
+import { useReducedMotion } from '../useReducedMotion';
 import {
   createId,
   formatDuration,
@@ -65,6 +68,7 @@ export const EntryEditor = ({
 }) => {
   const palette = useTheme();
   const { width } = useWindowDimensions();
+  const reducedMotion = useReducedMotion();
   const isDesktop = width >= 760;
   const recorder = useAudioRecorder({
     ...RecordingPresets.HIGH_QUALITY,
@@ -76,6 +80,7 @@ export const EntryEditor = ({
   const initialSnapshotRef = useRef('');
   const formScrollRef = useRef<ScrollView>(null);
   const tagsInputRef = useRef<TextInput>(null);
+  const recordingPulse = useRef(new Animated.Value(0)).current;
 
   const [mode, setMode] = useState<EditorMode>('text');
   const [title, setTitle] = useState('');
@@ -100,6 +105,33 @@ export const EntryEditor = ({
 
   const visible = Boolean(request);
   const existing = request?.entry;
+
+  useEffect(() => {
+    recordingPulse.stopAnimation();
+    if (!recorderState.isRecording || reducedMotion) {
+      recordingPulse.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(recordingPulse, {
+          duration: 650,
+          easing: Easing.inOut(Easing.ease),
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recordingPulse, {
+          duration: 650,
+          easing: Easing.inOut(Easing.ease),
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [recorderState.isRecording, recordingPulse, reducedMotion]);
 
   useEffect(() => {
     if (!visible) return;
@@ -683,10 +715,24 @@ export const EntryEditor = ({
                   >
                     {recorderState.isRecording ? (
                       <>
-                        <View
+                        <Animated.View
                           style={[
                             styles.recordingDot,
-                            { backgroundColor: palette.danger },
+                            {
+                              backgroundColor: palette.danger,
+                              opacity: recordingPulse.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [1, 0.42],
+                              }),
+                              transform: [
+                                {
+                                  scale: recordingPulse.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [1, 1.45],
+                                  }),
+                                },
+                              ],
+                            },
                           ]}
                         />
                         <Text style={[styles.recordingTime, { color: palette.ink }]}>
@@ -1193,6 +1239,7 @@ const styles = StyleSheet.create({
     marginTop: 9,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 8,
   },
   photoTile: {

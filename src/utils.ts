@@ -96,6 +96,27 @@ export const calculateStreak = (
   return streak;
 };
 
+export const calculateBestStreak = (entries: JournalEntry[]) => {
+  const days = new Set(entries.map((entry) => entry.entryDate));
+  let best = 0;
+
+  days.forEach((day) => {
+    const previous = fromDateKey(day);
+    previous.setDate(previous.getDate() - 1);
+    if (days.has(toDateKey(previous))) return;
+
+    let run = 0;
+    const cursor = fromDateKey(day);
+    while (days.has(toDateKey(cursor))) {
+      run += 1;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    best = Math.max(best, run);
+  });
+
+  return best;
+};
+
 export const formatReminderTime = (hour: number, minute: number) =>
   new Date(2000, 0, 1, hour, minute).toLocaleTimeString(undefined, {
     hour: 'numeric',
