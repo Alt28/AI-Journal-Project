@@ -4,6 +4,9 @@ Daybook is an Android-only, offline-first private journal built with React
 Native and Expo. The native Gradle project is included in `android/` so it can
 be opened and run directly in Android Studio.
 
+Demo here: https://drive.google.com/drive/folders/1MyEPgqzbru38FKHIJqzjlpJNr9aoiS8n
+
+
 ## CRUD behavior
 
 - **Create:** Use the center `+` button or a screen's Add Entry action.
