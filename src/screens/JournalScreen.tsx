@@ -15,14 +15,16 @@ import { EntryCard } from '../components/EntryCard';
 import { Button, EmptyState, Icon } from '../components/ui';
 import { JournalEntry } from '../types';
 import { radii } from '../theme';
+import { formatDuration } from '../utils';
 
-type Filter = 'all' | 'favorites' | 'voice' | 'photos';
+type Filter = 'all' | 'favorites' | 'voice' | 'photos' | 'videos';
 
 const filterOptions = [
   { icon: 'book-outline', key: 'all', label: 'All' },
   { icon: 'heart-outline', key: 'favorites', label: 'Favorites' },
   { icon: 'mic-outline', key: 'voice', label: 'Voice' },
   { icon: 'images-outline', key: 'photos', label: 'Photos' },
+  { icon: 'video-outline', key: 'videos', label: 'Videos' },
 ] as const;
 
 type MonthSection = {
@@ -78,6 +80,7 @@ export const JournalScreen = ({
         if (filter === 'favorites' && !entry.favorite) return false;
         if (filter === 'voice' && !entry.audioUri) return false;
         if (filter === 'photos' && !entry.imageUris.length) return false;
+        if (filter === 'videos' && !entry.videoUri) return false;
         if (!normalized) return true;
         return [entry.title, entry.body, entry.entryDate, ...entry.tags]
           .join(' ')
@@ -104,7 +107,7 @@ export const JournalScreen = ({
 
     return Array.from(grouped.entries()).map(([key, entriesForMonth]) => ({
       data:
-        filter === 'photos'
+        filter === 'photos' || filter === 'videos'
           ? chunkEntries(entriesForMonth, 3)
           : entriesForMonth.map((entry) => [entry]),
       entryCount: entriesForMonth.length,
@@ -123,7 +126,9 @@ export const JournalScreen = ({
           ? 'No favorites yet'
           : filter === 'voice'
             ? 'No voice entries yet'
-            : 'No photo entries yet';
+            : filter === 'photos'
+              ? 'No photo entries yet'
+              : 'No video entries yet';
 
   const emptyBody =
     entries.length === 0
@@ -238,6 +243,10 @@ export const JournalScreen = ({
                   ? `${filtered.length} ${
                       filtered.length === 1 ? 'photo entry' : 'photo entries'
                     }`
+                  : filter === 'videos'
+                    ? `${filtered.length} ${
+                        filtered.length === 1 ? 'video entry' : 'video entries'
+                      }`
                   : `${filtered.length} ${
                       filtered.length === 1 ? 'result' : 'results'
                     }`}
@@ -284,58 +293,98 @@ export const JournalScreen = ({
         </View>
       }
       renderItem={({ item }) => {
-        if (filter === 'photos') {
+        if (filter === 'photos' || filter === 'videos') {
+          const showingVideos = filter === 'videos';
           return (
             <View style={styles.galleryRow}>
-              {item.map((entry) => (
-                <Pressable
-                  accessibilityHint="Opens this photo journal entry"
-                  accessibilityLabel={`Open ${
-                    entry.title.trim() || 'photo entry'
-                  } from day ${Number(entry.entryDate.slice(8))}`}
-                  accessibilityRole="button"
-                  key={entry.id}
-                  onPress={() => onOpenEntry(entry)}
-                  style={({ pressed }) => [
-                    styles.galleryTile,
-                    {
-                      backgroundColor: palette.input,
-                      borderColor: palette.border,
-                      opacity: pressed ? 0.78 : 1,
-                      transform: [{ scale: pressed ? 0.97 : 1 }],
-                    },
-                  ]}
-                >
-                  <Image
-                    resizeMode="cover"
-                    source={{ uri: entry.imageUris[0] }}
-                    style={styles.galleryImage}
-                  />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(7,15,12,0.82)']}
-                    pointerEvents="none"
-                    style={styles.galleryShade}
-                  />
-                  <View style={styles.galleryDayBadge}>
-                    <Text style={styles.galleryDayText}>
-                      {Number(entry.entryDate.slice(8))}
-                    </Text>
-                  </View>
-                  {entry.imageUris.length > 1 ? (
-                    <View style={styles.galleryCountBadge}>
-                      <Icon name="images" color="#FFFFFF" size={11} />
-                      <Text style={styles.galleryCountText}>
-                        {entry.imageUris.length}
+              {item.map((entry) => {
+                const previewUri = showingVideos
+                  ? entry.videoThumbnailUri
+                  : entry.imageUris[0];
+                const mediaLabel = showingVideos ? 'video' : 'photo';
+
+                return (
+                  <Pressable
+                    accessibilityHint={`Opens this ${mediaLabel} journal entry`}
+                    accessibilityLabel={`Open ${
+                      entry.title.trim() || `${mediaLabel} entry`
+                    } from day ${Number(entry.entryDate.slice(8))}`}
+                    accessibilityRole="button"
+                    key={entry.id}
+                    onPress={() => onOpenEntry(entry)}
+                    style={({ pressed }) => [
+                      styles.galleryTile,
+                      {
+                        backgroundColor: palette.input,
+                        borderColor: palette.border,
+                        opacity: pressed ? 0.78 : 1,
+                        transform: [{ scale: pressed ? 0.97 : 1 }],
+                      },
+                    ]}
+                  >
+                    {previewUri ? (
+                      <Image
+                        resizeMode="cover"
+                        source={{ uri: previewUri }}
+                        style={styles.galleryImage}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.galleryPlaceholder,
+                          { backgroundColor: palette.primarySoft },
+                        ]}
+                      >
+                        <Icon
+                          name="video-outline"
+                          color={palette.primary}
+                          size={30}
+                        />
+                      </View>
+                    )}
+                    <LinearGradient
+                      colors={['transparent', 'rgba(7,15,12,0.82)']}
+                      pointerEvents="none"
+                      style={styles.galleryShade}
+                    />
+                    <View style={styles.galleryDayBadge}>
+                      <Text style={styles.galleryDayText}>
+                        {Number(entry.entryDate.slice(8))}
                       </Text>
                     </View>
-                  ) : null}
-                  <View style={styles.galleryCopy}>
-                    <Text numberOfLines={1} style={styles.galleryTitle}>
-                      {entry.title.trim() || 'Photo entry'}
-                    </Text>
-                  </View>
-                </Pressable>
-              ))}
+                    {showingVideos ? (
+                      <>
+                        <View
+                          pointerEvents="none"
+                          style={styles.galleryVideoPlay}
+                        >
+                          <Icon name="play" color="#FFFFFF" size={19} />
+                        </View>
+                        {entry.videoDuration ? (
+                          <View style={styles.galleryCountBadge}>
+                            <Text style={styles.galleryCountText}>
+                              {formatDuration(entry.videoDuration)}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </>
+                    ) : entry.imageUris.length > 1 ? (
+                      <View style={styles.galleryCountBadge}>
+                        <Icon name="images" color="#FFFFFF" size={11} />
+                        <Text style={styles.galleryCountText}>
+                          {entry.imageUris.length}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <View style={styles.galleryCopy}>
+                      <Text numberOfLines={1} style={styles.galleryTitle}>
+                        {entry.title.trim() ||
+                          (showingVideos ? 'Video entry' : 'Photo entry')}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
               {Array.from({ length: 3 - item.length }, (_, index) => (
                 <View key={`spacer-${index}`} style={styles.gallerySpacer} />
               ))}
@@ -445,10 +494,12 @@ const styles = StyleSheet.create({
   filters: {
     paddingVertical: 15,
     flexDirection: 'row',
-    gap: 6,
+    flexWrap: 'wrap',
+    gap: 7,
   },
   filterButton: {
-    flex: 1,
+    flexBasis: '30%',
+    flexGrow: 1,
     minWidth: 0,
     minHeight: 48,
     borderRadius: 17,
@@ -550,6 +601,15 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  galleryPlaceholder: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   galleryShade: {
     position: 'absolute',
     top: 0,
@@ -592,6 +652,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '800',
+  },
+  galleryVideoPlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 42,
+    height: 42,
+    marginTop: -21,
+    marginLeft: -21,
+    borderRadius: 21,
+    backgroundColor: 'rgba(9,18,15,0.74)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.34)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   galleryCopy: {
     position: 'absolute',
