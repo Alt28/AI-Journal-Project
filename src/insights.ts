@@ -159,12 +159,11 @@ export const getWeeklyInsights = (
       : 'dominant'
     : 'none';
 
-  let summary = 'No reflections this week yet.';
+  let summary = 'No entries this week yet.';
   if (weekEntries.length) {
-    const reflectionLabel =
-      weekEntries.length === 1 ? 'reflection' : 'reflections';
+    const entryLabel = weekEntries.length === 1 ? 'entry' : 'entries';
     const dayLabel = journaledDays === 1 ? 'day' : 'days';
-    summary = `You journaled on ${journaledDays} ${dayLabel} this week and kept ${weekEntries.length} ${reflectionLabel}.`;
+    summary = `You journaled on ${journaledDays} ${dayLabel} this week and added ${weekEntries.length} ${entryLabel}.`;
     if (moodDistribution.dominantMood) {
       summary += ` ${
         moodLabels[moodDistribution.dominantMood]

@@ -443,11 +443,11 @@ export const CalendarScreen = ({
             <EmptyState
               icon="calendar-outline"
               title="Nothing here yet"
-              body="Add a memory, thought, or voice note for this day."
+              body="Add an entry for this day."
               action={
                 <Button
                   compact
-                  label="Add reflection"
+                  label="Add entry"
                   icon="add"
                   onPress={() => onNew(selectedDate)}
                 />
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   monthCaption: {
     marginTop: 3,
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.1,
   },
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   weekday: {
     width: `${100 / 7}%`,
     textAlign: 'center',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.35,
   },
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   entryCountText: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '800',
   },
   moodStory: {
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   moodStoryEyebrow: {
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.95,
   },
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   moodStoryCountLabel: {
     marginTop: 1,
-    fontSize: 6,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.4,
   },
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
   },
   moodStoryNote: {
     marginTop: -3,
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   moodKeyLabel: {
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '600',
   },
   addDate: {

@@ -289,7 +289,7 @@ export const TodayScreen = ({
               style={[styles.heroActions, compact && styles.heroActionsCompact]}
             >
               <Button
-                label="Write a note"
+                label="Write an entry"
                 icon="create-outline"
                 onPress={() => onNew('text')}
                 variant="secondary"
@@ -375,7 +375,7 @@ export const TodayScreen = ({
               </View>
               <View style={styles.insightHeading}>
                 <Text style={[styles.insightEyebrow, { color: palette.primary }]}>
-                  WEEKLY REFLECTION
+                  WEEKLY SUMMARY
                 </Text>
                 <Text style={[styles.insightTitle, { color: palette.ink }]}>
                   Your week
@@ -383,7 +383,7 @@ export const TodayScreen = ({
               </View>
               <Pressable
                 accessibilityHint="Opens a detailed seven-day overview"
-                accessibilityLabel="View weekly reflection"
+                accessibilityLabel="View weekly summary"
                 accessibilityRole="button"
                 onPress={() => setWeeklyOverviewOpen(true)}
                 style={({ pressed }) => [
@@ -414,161 +414,101 @@ export const TodayScreen = ({
               </Pressable>
             </View>
 
-            <View style={styles.trendHeader}>
-              <View>
-                <Text style={[styles.trendTitle, { color: palette.ink }]}>
-                  Mood calendar
+            <View
+              style={[
+                styles.weeklySnapshot,
+                { backgroundColor: palette.input },
+              ]}
+            >
+              <View style={styles.weeklySnapshotItem}>
+                <Text style={[styles.weeklySnapshotValue, { color: palette.ink }]}>
+                  {weeklyInsights.journaledDays}
                 </Text>
-                <Text style={[styles.trendHint, { color: palette.inkFaint }]}>
-                  Sunday to Saturday
+                <Text
+                  style={[
+                    styles.weeklySnapshotLabel,
+                    { color: palette.inkMuted },
+                  ]}
+                >
+                  DAYS
                 </Text>
               </View>
-              {weeklyInsights.dominantMood ? (
-                <View
-                  style={[
-                    styles.dominantMood,
-                    {
-                      backgroundColor: palette.isDark
-                        ? moodMeta[weeklyInsights.dominantMood].dark
-                        : moodMeta[weeklyInsights.dominantMood].light,
-                    },
-                  ]}
-                >
-                  <Text style={styles.dominantMoodEmoji}>
-                    {moodMeta[weeklyInsights.dominantMood].emoji}
-                  </Text>
-                  <Text
-                    style={[styles.dominantMoodText, { color: palette.ink }]}
-                  >
-                    {moodMeta[weeklyInsights.dominantMood].label}
-                  </Text>
-                </View>
-              ) : weeklyInsights.moodState === 'mixed' ? (
-                <View
-                  style={[
-                    styles.dominantMood,
-                    { backgroundColor: palette.input },
-                  ]}
-                >
-                  <Icon
-                    name="color-palette-outline"
-                    color={palette.primary}
-                    size={14}
-                  />
-                  <Text
-                    style={[styles.dominantMoodText, { color: palette.ink }]}
-                  >
-                    Mixed
-                  </Text>
-                </View>
-              ) : (
-                <Text style={[styles.noMoodText, { color: palette.inkFaint }]}>
-                  No moods yet
+              <View
+                style={[
+                  styles.weeklySnapshotDivider,
+                  { backgroundColor: palette.border },
+                ]}
+              />
+              <View style={styles.weeklySnapshotItem}>
+                <Text style={[styles.weeklySnapshotValue, { color: palette.ink }]}>
+                  {weeklyInsights.entryCount}
                 </Text>
-              )}
-            </View>
-
-            <View style={styles.weekGrid}>
-              {weeklyInsights.days.map((day) => {
-                const mood = day.mood ? moodMeta[day.mood] : null;
-                const moodColor = mood
-                  ? palette.isDark
-                    ? mood.dark
-                    : mood.light
-                  : palette.input;
-
-                return (
-                  <Pressable
-                    accessibilityHint="Opens the journal entries for this day"
-                    accessibilityLabel={`${day.fullLabel}: ${
-                      mood ? `${mood.label} mood` : 'no mood recorded'
-                    }, ${day.entryCount} ${
-                      day.entryCount === 1 ? 'reflection' : 'reflections'
-                    }${day.isFuture ? ', future date unavailable' : ''}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: day.isFuture }}
-                    disabled={day.isFuture}
-                    key={day.key}
-                    onPress={() => setSelectedDate(day.key)}
-                    style={({ pressed }) => [
-                      styles.weekTile,
-                      {
-                        opacity: day.isFuture ? 0.3 : pressed ? 0.55 : 1,
-                        backgroundColor: mood
-                          ? moodColor
-                          : day.isToday
-                            ? palette.primarySoft
-                            : palette.surface,
-                        borderColor: day.isToday
-                          ? palette.primary
-                          : mood
-                            ? moodColor
-                            : palette.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.weekTileWeekday,
-                        {
-                          color: day.isToday
-                            ? palette.primary
-                            : palette.inkFaint,
-                        },
-                      ]}
-                    >
-                      {day.label}
+                <Text
+                  style={[
+                    styles.weeklySnapshotLabel,
+                    { color: palette.inkMuted },
+                  ]}
+                >
+                  ENTRIES
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.weeklySnapshotDivider,
+                  { backgroundColor: palette.border },
+                ]}
+              />
+              <View style={styles.weeklySnapshotItem}>
+                {weeklyInsights.dominantMood ? (
+                  <>
+                    <Text style={styles.weeklySnapshotMood}>
+                      {moodMeta[weeklyInsights.dominantMood].emoji}
                     </Text>
                     <Text
                       style={[
-                        styles.weekTileDate,
-                        { color: palette.ink },
+                        styles.weeklySnapshotLabel,
+                        { color: palette.inkMuted },
                       ]}
                     >
-                      {fromDateKey(day.key).getDate()}
+                      {moodMeta[
+                        weeklyInsights.dominantMood
+                      ].label.toUpperCase()}
                     </Text>
-                    <View style={styles.weekTileMood}>
-                      {mood ? (
-                        <Text style={styles.weekTileEmoji}>{mood.emoji}</Text>
-                      ) : day.entryCount ? (
-                        <Icon
-                          name="book-outline"
-                          color={palette.primary}
-                          size={16}
-                        />
-                      ) : (
-                        <Text
-                          style={[
-                            styles.weekTileEmpty,
-                            { color: palette.inkFaint },
-                          ]}
-                        >
-                          —
-                        </Text>
-                      )}
-                    </View>
-                    <View style={styles.weekTileMeta}>
-                      {day.entryCount ? (
-                        <>
-                          <Icon
-                            name="document-text-outline"
-                            color={palette.inkMuted}
-                            size={9}
-                          />
-                          <Text
-                            style={[
-                              styles.weekTileCount,
-                              { color: palette.inkMuted },
-                            ]}
-                          >
-                            {day.entryCount > 9 ? '9+' : day.entryCount}
-                          </Text>
-                        </>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
+                  </>
+                ) : weeklyInsights.moodState === 'mixed' ? (
+                  <>
+                    <Icon
+                      name="color-palette-outline"
+                      color={palette.primary}
+                      size={20}
+                    />
+                    <Text
+                      style={[
+                        styles.weeklySnapshotLabel,
+                        { color: palette.inkMuted },
+                      ]}
+                    >
+                      MIXED
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Icon
+                      name="remove-outline"
+                      color={palette.inkMuted}
+                      size={20}
+                    />
+                    <Text
+                      style={[
+                        styles.weeklySnapshotLabel,
+                        { color: palette.inkMuted },
+                      ]}
+                    >
+                      NO MOOD
+                    </Text>
+                  </>
+                )}
+              </View>
             </View>
 
             <View style={styles.weekProgress}>
@@ -583,8 +523,8 @@ export const TodayScreen = ({
                 >
                   {weeklyInsights.entryCount}{' '}
                   {weeklyInsights.entryCount === 1
-                    ? 'reflection'
-                    : 'reflections'}
+                    ? 'entry'
+                    : 'entries'}
                 </Text>
               </View>
               <View style={styles.weekProgressSegments}>
@@ -609,11 +549,6 @@ export const TodayScreen = ({
                   );
                 })}
               </View>
-              <Text
-                style={[styles.weekProgressHint, { color: palette.inkFaint }]}
-              >
-                Tap a day to open its reflections
-              </Text>
             </View>
           </Card>
         ) : null}
@@ -684,7 +619,7 @@ export const TodayScreen = ({
         ) : null}
 
         <SectionHeader
-          title={recent.length ? 'Recent reflections' : 'Your reflections'}
+          title={recent.length ? 'Recent entries' : 'Your entries'}
           action={
             recent.length ? (
               <Pressable
@@ -719,7 +654,7 @@ export const TodayScreen = ({
               A journal that belongs only to you
             </Text>
             <Text style={[styles.firstBody, { color: palette.inkMuted }]}>
-              Your notes and recordings are saved locally on this device. No account,
+              Your entries are saved locally on this device. No account,
               no ads, no server.
             </Text>
             <Button
@@ -1145,7 +1080,7 @@ export const TodayScreen = ({
                     <Text
                       style={[styles.sheetEyebrow, { color: palette.primary }]}
                     >
-                      WEEKLY REFLECTION
+                      WEEKLY SUMMARY
                     </Text>
                     <Text style={[styles.sheetTitle, { color: palette.ink }]}>
                       Your week
@@ -1275,8 +1210,8 @@ export const TodayScreen = ({
                             mood ? `${mood.label} mood` : 'no mood'
                           }, ${day.entryCount} ${
                             day.entryCount === 1
-                              ? 'reflection'
-                              : 'reflections'
+                              ? 'entry'
+                              : 'entries'
                           }${day.isFuture ? ', future date unavailable' : ''}`}
                           accessibilityRole="button"
                           accessibilityState={{ disabled: day.isFuture }}
@@ -1386,8 +1321,8 @@ export const TodayScreen = ({
                               day.entryCount
                             } ${
                               day.entryCount === 1
-                                ? 'reflection'
-                                : 'reflections'
+                                ? 'entry'
+                                : 'entries'
                             }`}
                             accessibilityRole="button"
                             key={day.key}
@@ -1446,8 +1381,8 @@ export const TodayScreen = ({
                                 {mood ? mood.label : 'No mood'} ·{' '}
                                 {day.entryCount}{' '}
                                 {day.entryCount === 1
-                                  ? 'reflection'
-                                  : 'reflections'}
+                                  ? 'entry'
+                                  : 'entries'}
                               </Text>
                             </View>
                             <Icon
@@ -1461,7 +1396,7 @@ export const TodayScreen = ({
                     </View>
                   ) : (
                     <Pressable
-                      accessibilityLabel="Create a reflection for today"
+                      accessibilityLabel="Create an entry for today"
                       accessibilityRole="button"
                       onPress={() => setSelectedDate(today)}
                       style={({ pressed }) => [
@@ -1497,7 +1432,7 @@ export const TodayScreen = ({
                             { color: palette.inkMuted },
                           ]}
                         >
-                          Add your first reflection.
+                          Add your first entry.
                         </Text>
                       </View>
                       <Icon
@@ -1527,8 +1462,8 @@ export const TodayScreen = ({
                       >
                         {selectedEntries.length}{' '}
                         {selectedEntries.length === 1
-                          ? 'reflection'
-                          : 'reflections'}
+                          ? 'entry'
+                          : 'entries'}
                       </Text>
                     ) : null}
                   </View>
@@ -1586,7 +1521,7 @@ export const TodayScreen = ({
                     <Text
                       style={[styles.sheetEmptyTitle, { color: palette.ink }]}
                     >
-                      No reflections yet
+                      No entries yet
                     </Text>
                     <Text
                       style={[
@@ -1757,7 +1692,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   insightEyebrow: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1777,7 +1712,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weeklyActionMeta: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '700',
   },
   weeklyActionLabel: {
@@ -1786,91 +1721,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weeklyActionText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '800',
   },
-  trendHeader: {
-    minHeight: 36,
-    marginTop: 20,
+  weeklySnapshot: {
+    minHeight: 84,
+    marginTop: 18,
+    borderRadius: 18,
+    paddingVertical: 13,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  trendTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  trendHint: {
-    marginTop: 2,
-    fontSize: 9,
-    fontWeight: '600',
-  },
-  dominantMood: {
-    minHeight: 30,
-    borderRadius: radii.pill,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  dominantMoodEmoji: {
-    fontSize: 14,
-  },
-  dominantMoodText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  noMoodText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  weekGrid: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 4,
-  },
-  weekTile: {
+  weeklySnapshotItem: {
     flex: 1,
-    minHeight: 112,
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  weekTileWeekday: {
-    fontSize: 8,
-    fontWeight: '800',
-  },
-  weekTileDate: {
-    fontSize: 14,
-    lineHeight: 17,
-    fontWeight: '800',
-  },
-  weekTileMood: {
-    height: 25,
+    minWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
-  weekTileEmoji: {
-    fontSize: 18,
-  },
-  weekTileEmpty: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  weekTileMeta: {
-    minHeight: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  weekTileCount: {
-    fontSize: 7,
+  weeklySnapshotValue: {
+    fontSize: 22,
+    lineHeight: 25,
     fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  weeklySnapshotMood: {
+    fontSize: 21,
+    lineHeight: 25,
+  },
+  weeklySnapshotLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.45,
+    textAlign: 'center',
+  },
+  weeklySnapshotDivider: {
+    width: 1,
+    height: 38,
   },
   weekProgress: {
-    marginTop: 14,
+    marginTop: 13,
   },
   weekProgressHeader: {
     flexDirection: 'row',
@@ -1878,7 +1769,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   weekProgressText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
   },
   weekProgressSegments: {
@@ -1890,11 +1781,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 5,
     borderRadius: 3,
-  },
-  weekProgressHint: {
-    marginTop: 8,
-    fontSize: 8,
-    fontWeight: '600',
   },
   memoryCount: {
     fontSize: 11,
@@ -1913,7 +1799,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   memoryLabelText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.85,
   },
@@ -1944,7 +1830,7 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   aiLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.15,
   },
@@ -1954,7 +1840,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   aiStatusText: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.75,
   },
@@ -2079,7 +1965,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetEyebrow: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.15,
     marginBottom: 5,
@@ -2168,7 +2054,7 @@ const styles = StyleSheet.create({
   },
   streakStatLabel: {
     marginTop: 2,
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.55,
   },
@@ -2204,7 +2090,7 @@ const styles = StyleSheet.create({
   },
   streakJourneySubtitle: {
     marginTop: 3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
   },
   streakJourneyCount: {
@@ -2221,7 +2107,7 @@ const styles = StyleSheet.create({
   },
   streakJourneyCountLabel: {
     marginTop: 2,
-    fontSize: 6,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.45,
   },
@@ -2254,7 +2140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   streakTrailLabel: {
-    fontSize: 7,
+    fontSize: 10,
     lineHeight: 9,
     fontWeight: '800',
     letterSpacing: 0.45,
@@ -2279,7 +2165,7 @@ const styles = StyleSheet.create({
   },
   streakTrailDate: {
     marginTop: 5,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   streakJourneyFooter: {
@@ -2291,7 +2177,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   streakJourneyFooterText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
   },
   streakTodayLegend: {
@@ -2307,7 +2193,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   streakTodayText: {
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '600',
   },
   streakRule: {
@@ -2334,7 +2220,7 @@ const styles = StyleSheet.create({
   },
   streakRuleBody: {
     marginTop: 4,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 15,
   },
   weekStats: {
@@ -2360,7 +2246,7 @@ const styles = StyleSheet.create({
   weekStatLabel: {
     maxWidth: '90%',
     marginTop: 3,
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.6,
     textAlign: 'center',
@@ -2376,7 +2262,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   weekSectionHint: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
   },
   weekRail: {
@@ -2394,7 +2280,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   weekRailLabel: {
-    fontSize: 7,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
@@ -2430,7 +2316,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   weekRailCountText: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '800',
   },
   weekJournaledDays: {
@@ -2465,7 +2351,7 @@ const styles = StyleSheet.create({
   },
   weekJournaledMeta: {
     marginTop: 3,
-    fontSize: 10,
+    fontSize: 12,
   },
   weekEmpty: {
     minHeight: 68,
@@ -2492,7 +2378,7 @@ const styles = StyleSheet.create({
   },
   weekEmptyBody: {
     marginTop: 3,
-    fontSize: 10,
+    fontSize: 12,
   },
   sheetEmpty: {
     flex: 1,

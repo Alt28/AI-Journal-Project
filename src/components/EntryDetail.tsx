@@ -253,7 +253,7 @@ export const EntryDetail = ({
                             { color: palette.inkMuted },
                           ]}
                         >
-                          VOICE REFLECTION
+                          VOICE ENTRY
                         </Text>
                       </View>
                     </View>
@@ -460,7 +460,7 @@ export const EntryDetail = ({
                 <Text
                   style={[styles.actionDescription, { color: palette.inkMuted }]}
                 >
-                  Update this reflection or remove it from your journal.
+                  Update this entry or remove it from your journal.
                 </Text>
               </View>
               <View style={styles.actions}>
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   sectionLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   sectionHint: {
-    fontSize: 10,
+    fontSize: 11,
   },
   detailSection: {
     marginTop: 26,
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
   morePhotosLabel: {
     marginTop: 2,
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,

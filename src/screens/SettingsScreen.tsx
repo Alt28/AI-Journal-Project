@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     marginTop: 8,
     marginLeft: 3,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.3,
   },
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     marginTop: 4,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
   },
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   },
   version: {
     marginTop: 6,
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
   },
 });

@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   mobileTabLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   addSlot: {

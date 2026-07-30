@@ -127,7 +127,7 @@ export const JournalScreen = ({
 
   const emptyBody =
     entries.length === 0
-      ? 'Write about your day or save a private voice reflection.'
+      ? 'Write about your day or save a private voice entry.'
       : 'Try changing the search or filter to find what you need.';
 
   return (
@@ -147,7 +147,7 @@ export const JournalScreen = ({
               <Text style={[styles.subtitle, { color: palette.inkMuted }]}>
                 {entries.length
                   ? `${entries.length} private ${
-                      entries.length === 1 ? 'reflection' : 'reflections'
+                      entries.length === 1 ? 'entry' : 'entries'
                     }`
                   : 'A quiet record of your days'}
               </Text>
@@ -235,7 +235,7 @@ export const JournalScreen = ({
               <Text style={[styles.resultLabel, { color: palette.inkMuted }]}>
                 {filter === 'photos'
                   ? `${filtered.length} ${
-                      filtered.length === 1 ? 'photo memory' : 'photo memories'
+                      filtered.length === 1 ? 'photo entry' : 'photo entries'
                     }`
                   : `${filtered.length} ${
                       filtered.length === 1 ? 'result' : 'results'
@@ -290,7 +290,7 @@ export const JournalScreen = ({
                 <Pressable
                   accessibilityHint="Opens this photo journal entry"
                   accessibilityLabel={`Open ${
-                    entry.title.trim() || 'photo reflection'
+                    entry.title.trim() || 'photo entry'
                   } from day ${Number(entry.entryDate.slice(8))}`}
                   accessibilityRole="button"
                   key={entry.id}
@@ -330,7 +330,7 @@ export const JournalScreen = ({
                   ) : null}
                   <View style={styles.galleryCopy}>
                     <Text numberOfLines={1} style={styles.galleryTitle}>
-                      {entry.title.trim() || 'Photo reflection'}
+                      {entry.title.trim() || 'Photo entry'}
                     </Text>
                   </View>
                 </Pressable>
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     minWidth: 0,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
   },
   resultRow: {
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sortText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
   },
   monthHeader: {
@@ -501,13 +501,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   currentMonthText: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.6,
   },
   monthCount: {
     marginLeft: 'auto',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '600',
   },
   monthDivider: {
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   },
   galleryCountText: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '800',
   },
   galleryCopy: {
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   },
   galleryTitle: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 13,
     fontWeight: '700',
     textShadowColor: 'rgba(0,0,0,0.38)',

@@ -332,7 +332,7 @@ function JournalApp() {
     });
     void discardJournalDraft();
     setEditor(null);
-    showToast(previous ? 'Reflection updated' : 'Reflection saved on this device');
+    showToast(previous ? 'Entry updated' : 'Entry saved on this device');
   };
 
   const deleteEntry = (entry: JournalEntry) => {

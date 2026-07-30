@@ -44,7 +44,7 @@ export const syncDailyReminder = async (
     const reminderId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'A quiet moment for you',
-        body: 'How did today feel? Add a note to your Daybook.',
+        body: 'How did today feel? Add an entry to your Daybook.',
         sound: false,
       },
       trigger: {

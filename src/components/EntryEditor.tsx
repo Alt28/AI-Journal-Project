@@ -98,6 +98,7 @@ export const EntryEditor = ({
   const [error, setError] = useState('');
   const [draftReady, setDraftReady] = useState(false);
   const [draftStatus, setDraftStatus] = useState('');
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [discardConfirmationVisible, setDiscardConfirmationVisible] =
     useState(false);
   const [deleteConfirmationVisible, setDeleteConfirmationVisible] =
@@ -153,6 +154,7 @@ export const EntryEditor = ({
     setDiscardConfirmationVisible(false);
     setDraftReady(false);
     setDraftStatus('');
+    setMoreOptionsOpen(false);
     if (!request) return;
     const entry = request.entry;
     const draft = request.draft;
@@ -270,6 +272,14 @@ export const EntryEditor = ({
       ).slice(0, 8),
     [tags],
   );
+  const moreOptionsSummary = [
+    parsedTags.length
+      ? `${parsedTags.length} ${parsedTags.length === 1 ? 'tag' : 'tags'}`
+      : '',
+    favorite ? 'Favorite' : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const canSave =
     !busy &&
@@ -516,7 +526,7 @@ export const EntryEditor = ({
                 </Text>
               </Pressable>
               <Text style={[styles.editorTitle, { color: palette.ink }]}>
-                {existing ? 'Edit reflection' : 'New reflection'}
+                {existing ? 'Edit entry' : 'New entry'}
               </Text>
               <Pressable
                 accessibilityRole="button"
@@ -700,7 +710,7 @@ export const EntryEditor = ({
               ) : (
                 <View>
                   <Text style={[styles.label, { color: palette.inkMuted }]}>
-                    Voice reflection
+                    Voice entry
                   </Text>
                   <View
                     style={[
@@ -741,7 +751,7 @@ export const EntryEditor = ({
                         <Text
                           style={[styles.recordingHint, { color: palette.inkMuted }]}
                         >
-                          Recording your reflection…
+                          Recording your entry…
                         </Text>
                         <Button
                           compact
@@ -913,67 +923,126 @@ export const EntryEditor = ({
                 ) : null}
               </View>
 
-              <View>
-                <Text style={[styles.label, { color: palette.inkMuted }]}>Tags</Text>
-                <TextInput
-                  accessibilityLabel="Entry tags"
-                  ref={tagsInputRef}
-                  value={tags}
-                  onChangeText={setTags}
-                  onFocus={() => {
-                    requestAnimationFrame(() => {
-                      formScrollRef.current?.scrollToEnd({ animated: true });
-                    });
-                  }}
-                  autoCapitalize="none"
-                  placeholder="personal, work, gratitude"
-                  placeholderTextColor={palette.inkFaint}
-                  selectionColor={palette.primary}
-                  style={[
-                    styles.tagsInput,
-                    {
-                      color: palette.ink,
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                    },
-                  ]}
-                />
-                <Text style={[styles.tagHint, { color: palette.inkFaint }]}>
-                  Separate tags with commas
-                </Text>
-              </View>
-
               <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: favorite }}
-                onPress={() => setFavorite((value) => !value)}
-                style={[
-                  styles.favoriteRow,
+                accessibilityHint="Shows optional tags and favorite settings"
+                accessibilityRole="button"
+                accessibilityState={{ expanded: moreOptionsOpen }}
+                onPress={() => setMoreOptionsOpen((open) => !open)}
+                style={({ pressed }) => [
+                  styles.moreOptionsToggle,
                   {
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
+                    opacity: pressed ? 0.72 : 1,
                   },
                 ]}
               >
                 <Icon
-                  name={favorite ? 'heart' : 'heart-outline'}
-                  color={favorite ? palette.danger : palette.inkFaint}
-                  size={21}
+                  name="options-outline"
+                  color={palette.primary}
+                  size={20}
                 />
-                <View style={styles.favoriteCopy}>
-                  <Text style={[styles.favoriteTitle, { color: palette.ink }]}>
-                    Keep in favorites
+                <View style={styles.moreOptionsCopy}>
+                  <Text style={[styles.moreOptionsTitle, { color: palette.ink }]}>
+                    More options
                   </Text>
-                  <Text style={[styles.favoriteBody, { color: palette.inkMuted }]}>
-                    Make this reflection easier to find
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.moreOptionsSummary,
+                      { color: palette.inkMuted },
+                    ]}
+                  >
+                    {moreOptionsSummary || 'Tags and favorite'}
                   </Text>
                 </View>
                 <Icon
-                  name={favorite ? 'checkmark-circle' : 'ellipse-outline'}
-                  color={favorite ? palette.primary : palette.inkFaint}
-                  size={21}
+                  name={moreOptionsOpen ? 'chevron-up' : 'chevron-down'}
+                  color={palette.inkMuted}
+                  size={19}
                 />
               </Pressable>
+
+              {moreOptionsOpen ? (
+                <View
+                  style={[
+                    styles.moreOptionsPanel,
+                    {
+                      backgroundColor: palette.input,
+                      borderColor: palette.border,
+                    },
+                  ]}
+                >
+                  <View>
+                    <Text style={[styles.label, { color: palette.inkMuted }]}>
+                      Tags
+                    </Text>
+                    <TextInput
+                      accessibilityLabel="Entry tags"
+                      ref={tagsInputRef}
+                      value={tags}
+                      onChangeText={setTags}
+                      onFocus={() => {
+                        requestAnimationFrame(() => {
+                          formScrollRef.current?.scrollToEnd({ animated: true });
+                        });
+                      }}
+                      autoCapitalize="none"
+                      placeholder="personal, work, gratitude"
+                      placeholderTextColor={palette.inkFaint}
+                      selectionColor={palette.primary}
+                      style={[
+                        styles.tagsInput,
+                        {
+                          color: palette.ink,
+                          backgroundColor: palette.surface,
+                          borderColor: palette.border,
+                        },
+                      ]}
+                    />
+                    <Text style={[styles.tagHint, { color: palette.inkMuted }]}>
+                      Separate tags with commas
+                    </Text>
+                  </View>
+
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: favorite }}
+                    onPress={() => setFavorite((value) => !value)}
+                    style={[
+                      styles.favoriteRow,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                      },
+                    ]}
+                  >
+                    <Icon
+                      name={favorite ? 'heart' : 'heart-outline'}
+                      color={favorite ? palette.danger : palette.inkMuted}
+                      size={21}
+                    />
+                    <View style={styles.favoriteCopy}>
+                      <Text style={[styles.favoriteTitle, { color: palette.ink }]}>
+                        Keep in favorites
+                      </Text>
+                      <Text
+                        style={[
+                          styles.favoriteBody,
+                          { color: palette.inkMuted },
+                        ]}
+                      >
+                        Make this entry easier to find
+                      </Text>
+                    </View>
+                    <Icon
+                      name={favorite ? 'checkmark-circle' : 'ellipse-outline'}
+                      color={favorite ? palette.primary : palette.inkMuted}
+                      size={21}
+                    />
+                  </Pressable>
+                </View>
+              ) : null}
 
               {existing ? (
                 <Pressable
@@ -1058,7 +1127,7 @@ const styles = StyleSheet.create({
     height: 24,
     paddingTop: 6,
     paddingHorizontal: 20,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -1107,7 +1176,7 @@ const styles = StyleSheet.create({
   },
   dateHint: {
     marginTop: 3,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -1135,7 +1204,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   moodLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
   },
   titleInput: {
@@ -1157,7 +1226,7 @@ const styles = StyleSheet.create({
   wordCount: {
     marginTop: 7,
     marginRight: 3,
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'right',
   },
   recorder: {
@@ -1232,7 +1301,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   photoCount: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   photoGrid: {
@@ -1291,13 +1360,42 @@ const styles = StyleSheet.create({
   photoHint: {
     marginTop: 7,
     marginLeft: 3,
-    fontSize: 10,
+    fontSize: 11,
   },
   imageError: {
     marginTop: 6,
     marginLeft: 3,
     fontSize: 11,
     lineHeight: 16,
+  },
+  moreOptionsToggle: {
+    minHeight: 66,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  moreOptionsCopy: {
+    minWidth: 0,
+    flex: 1,
+  },
+  moreOptionsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  moreOptionsSummary: {
+    marginTop: 3,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  moreOptionsPanel: {
+    marginTop: -12,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: 14,
+    gap: 14,
   },
   tagsInput: {
     minHeight: 50,
@@ -1309,7 +1407,7 @@ const styles = StyleSheet.create({
   tagHint: {
     marginTop: 6,
     marginLeft: 3,
-    fontSize: 10,
+    fontSize: 11,
   },
   favoriteRow: {
     minHeight: 66,
@@ -1329,7 +1427,7 @@ const styles = StyleSheet.create({
   },
   favoriteBody: {
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 11,
   },
   delete: {
     minHeight: 48,

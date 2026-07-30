@@ -53,19 +53,19 @@ export const formatDuration = (milliseconds = 0) => {
 
 export const getEntryPreview = (entry: JournalEntry) => {
   if (entry.body.trim()) return entry.body.trim().replace(/\s+/g, ' ');
-  if (entry.audioUri) return 'Voice reflection';
+  if (entry.audioUri) return 'Voice entry';
   if (entry.imageUris.length) {
     return `${entry.imageUris.length} ${
       entry.imageUris.length === 1 ? 'photo' : 'photos'
     }`;
   }
-  return 'Untitled reflection';
+  return 'Untitled entry';
 };
 
 export const getEntryTitle = (entry: JournalEntry) => {
   if (entry.title.trim()) return entry.title.trim();
-  if (entry.audioUri) return 'Voice reflection';
-  if (entry.imageUris.length) return 'Photo reflection';
+  if (entry.audioUri) return 'Voice entry';
+  if (entry.imageUris.length) return 'Photo entry';
   return formatLongDate(entry.entryDate);
 };
 
